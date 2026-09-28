@@ -26,6 +26,7 @@ const resourcesArb: fc.Arbitrary<Resource[]> = fc.tuple(
   ...staffIds.map((id) => fc.array(ruleArb, { minLength: 0, maxLength: 4 }).map((rules) => ({ id, kind: "staff" as const, rules }))),
 ).map((staff) => [...staff, ...chairIds.map((id) => ({ id, kind: "chair" as const }))]);
 
+let serviceSeq = 0;
 const serviceArb: fc.Arbitrary<Service> = fc
   .record({
     segs: fc.array(
@@ -40,8 +41,8 @@ const serviceArb: fc.Arbitrary<Service> = fc
     bufferBeforeMin: fc.constantFrom(0, 5, 15),
     bufferAfterMin: fc.constantFrom(0, 10, 15),
   })
-  .map(({ segs, staff, chairs, bufferBeforeMin, bufferAfterMin }, i) => ({
-    id: `svc${i}`,
+  .map(({ segs, staff, chairs, bufferBeforeMin, bufferAfterMin }) => ({
+    id: `svc${serviceSeq++}`,
     requirements: [
       { key: "staff", kind: "staff" as const, candidates: staff },
       { key: "chair", kind: "chair" as const, candidates: chairs },
