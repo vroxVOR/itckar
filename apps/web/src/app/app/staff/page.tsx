@@ -1,3 +1,5 @@
+import { PageHeading } from "@/components/page-heading";
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { withTenant } from "@itckar/db";
@@ -17,12 +19,12 @@ export default async function StaffPage() {
   const groups = ["staff", "chair", "room", "device", "other"].map((k) => ({ kind: k, list: resources.filter((r) => r.kind === k) })).filter((g) => g.list.length);
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">Tím a zdroje</h1>
+      <div className="page-toolbar flex flex-wrap items-center gap-3">
+        <PageHeading title="Tím a zdroje" description="Ľudia, priestory a ich dostupnosť." icon={<Users size={21} />} />
         <Link href="/app/staff/new" className="btn-primary ml-auto"><Plus size={16} /> Pridať</Link>
       </div>
       {groups.map((g) => (
-        <section key={g.kind} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <section key={g.kind} className="list-panel overflow-x-auto rounded-xl border border-neutral-200 bg-white">
           <h2 className="bg-neutral-50 px-4 py-2 text-xs font-semibold uppercase text-neutral-500">{KIND[g.kind]}</h2>
           <ul className="divide-y divide-neutral-100">
             {g.list.map((r) => {

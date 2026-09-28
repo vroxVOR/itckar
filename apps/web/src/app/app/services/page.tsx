@@ -1,3 +1,5 @@
+import { PageHeading } from "@/components/page-heading";
+import { Scissors } from "lucide-react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { requireTenant } from "@/lib/session";
@@ -23,12 +25,12 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
           <strong>Vitajte!</strong> Prevádzka je založená a vy ste prvý člen tímu (Po–Pi 9–17). Pridajte prvé služby, potom je rezervačná stránka <Link className="underline" href={`/b/${s.tenant.slug}`}>/b/{s.tenant.slug}</Link> hotová.
         </div>
       )}
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">Služby</h1>
+      <div className="page-toolbar flex flex-wrap items-center gap-3">
+        <PageHeading title="Služby" description="Vaša ponuka, ceny a čas pre každú službu." icon={<Scissors size={21} />} />
         <Link href="/app/services/new" className="btn-primary ml-auto"><Plus size={16} /> Nová služba</Link>
       </div>
       {[...groups.entries()].map(([cat, list]) => (
-        <section key={cat || "_"} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <section key={cat || "_"} className="list-panel overflow-x-auto rounded-xl border border-neutral-200 bg-white">
           {cat && <h2 className="bg-neutral-50 px-4 py-2 text-xs font-semibold uppercase text-neutral-500">{cat}</h2>}
           <ul className="divide-y divide-neutral-100">
             {list.map((svc) => (

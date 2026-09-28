@@ -1,3 +1,5 @@
+import { Brand } from "@/components/brand";
+import { CalendarDays, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DateTime } from "luxon";
@@ -72,19 +74,22 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
-      <header className="mb-6">
+    <main className="booking-page mx-auto max-w-3xl px-4 py-6 sm:py-10">
+      <header className="booking-header mb-6">
+        <span className="booking-header-icon" aria-hidden="true"><CalendarDays size={25} /></span>
+        <div>
         <h1 className="text-2xl font-semibold">{tenant.name}</h1>
         {location?.address && <p className="text-sm text-neutral-600">{location.address}{location.phone ? ` · ${location.phone}` : ""}</p>}
+        </div>
       </header>
-      <ol className="mb-6 flex gap-2 text-xs text-neutral-500">
+      <ol className="booking-steps mb-6 text-xs text-neutral-500">
         {[t(l, "choose_services"), t(l, "choose_staff"), t(l, "choose_time"), t(l, "your_details")].map((label, i) => (
-          <li key={label} className={`rounded-full px-2.5 py-1 ${step === i + 1 ? "bg-neutral-900 text-white" : step > i + 1 ? "bg-neutral-200" : "bg-neutral-100"}`}>{i + 1}. {label}</li>
+          <li key={label} aria-current={step === i + 1 ? "step" : undefined} className={step > i + 1 ? "is-complete" : ""}><span className="step-number">{step > i + 1 ? <Check size={14} aria-hidden="true" /> : i + 1}</span><span>{label}</span></li>
         ))}
       </ol>
 
       <div className="grid gap-6 md:grid-cols-[1fr_260px]">
-        <div>
+        <div className="min-w-0">
           {step === 1 && (
             <form method="get" action={base} className="space-y-4">
               <ServiceList services={services} categories={categories} tenant={{ currency: tenant.currency, locale: l }} />
@@ -123,7 +128,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
                   <Link
                     key={d.date}
                     href={q({ d: d.date })}
-                    className={`shrink-0 rounded-lg border px-3 py-2 text-center text-sm ${d.date === chosenDay ? "border-neutral-900 bg-neutral-900 text-white" : d.count ? "border-neutral-300 bg-white" : "border-neutral-200 bg-neutral-50 text-neutral-400"}`}
+                    className={`booking-day shrink-0 rounded-lg border px-3 py-2 text-center text-sm ${d.date === chosenDay ? "border-brand-600 bg-brand-600 text-white" : d.count ? "border-neutral-300 bg-white" : "border-neutral-200 bg-neutral-50 text-neutral-400"}`}
                   >
                     <div>{d.label}</div>
                     <div className="text-[10px] opacity-70">{d.count ? `${d.count}×` : "—"}</div>
@@ -136,7 +141,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
                 <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                   {daySlots.map((s) => (
                     <li key={s.start}>
-                      <Link href={q({ d: chosenDay, t: String(s.start) })} className="block rounded-lg border border-neutral-300 bg-white py-2 text-center text-sm hover:border-brand-500 hover:bg-brand-50">
+                      <Link href={q({ d: chosenDay, t: String(s.start) })} className="booking-slot block rounded-lg border border-neutral-300 bg-white py-2 text-center text-sm hover:border-brand-500 hover:bg-brand-50">
                         {fmtTime(s.start, zone, l)}
                       </Link>
                     </li>
@@ -157,6 +162,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               labels={{
                 title: t(l, "your_details"),
                 name: t(l, "name"),
+                lastName: t(l, "last_name"),
                 phone: t(l, "phone"),
                 email: t(l, "email"),
                 note: t(l, "note"),
@@ -172,7 +178,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
           )}
         </div>
 
-        <aside className="card h-fit text-sm md:sticky md:top-4">
+        <aside className="booking-summary card h-fit text-sm md:sticky md:top-4">
           <h3 className="font-medium">{tenant.name}</h3>
           {selected.length === 0 ? (
             <p className="mt-2 text-neutral-500">{t(l, "choose_services")}</p>
@@ -192,7 +198,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
           )}
           {staffPin && <p className="mt-2 text-neutral-600">{capableStaff.find((r) => r.id === staffPin.staff)?.name}</p>}
           {sp.staff === "" && step > 2 && <p className="mt-2 text-neutral-600">{t(l, "anyone")}</p>}
-          <p className="mt-4 text-[11px] text-neutral-400">{t(l, "powered_by")}</p>
+          <p className="booking-powered mt-4 text-[11px] text-neutral-500">{t(l, "powered_by")} <Brand compact /></p>
         </aside>
       </div>
     </main>
@@ -209,10 +215,10 @@ function ServiceList({ services, categories, tenant }: { services: Awaited<Retur
           <ul className="space-y-2">
             {g.list.map((s) => (
               <li key={s.id}>
-                <label className="card flex cursor-pointer items-start gap-3 hover:border-brand-500 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                <label className="service-option card flex cursor-pointer items-start gap-3 hover:border-brand-500 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
                   <input type="checkbox" name="s" value={s.id} className="mt-1" />
-                  <span className="flex-1">
-                    <span className="flex justify-between font-medium"><span>{s.name}</span><span>{money(s.priceCents, tenant.currency, tenant.locale, s.priceFrom)}</span></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex justify-between gap-3 font-medium"><span>{s.name}</span><span>{money(s.priceCents, tenant.currency, tenant.locale, s.priceFrom)}</span></span>
                     <span className="block text-xs text-neutral-500">{minutes(s.durationMin, tenant.locale)}</span>
                     {s.description && <span className="mt-1 block text-sm text-neutral-600">{s.description}</span>}
                   </span>
