@@ -42,8 +42,8 @@ describe("availability", () => {
       availableSlots(tx, tenant, { serviceIds: [seed.services.haircut], fromMs: t("2026-03-23T00:00"), toMs: t("2026-03-24T00:00"), nowMs: NOW }),
     );
     const starts = slots.map((s) => DateTime.fromMillis(s.start, { zone: ZONE }).toFormat("HH:mm"));
-    expect(starts[0]).toBe("09:00");
-    expect(starts.at(-1)).toBe("19:15"); // Boris until 20:00, 45 min cut
+    expect(starts[0]!).toBe("09:00");
+    expect(starts.at(-1)!).toBe("19:15"); // Boris until 20:00, 45 min cut
     expect(starts).toContain("16:30"); // Anna cannot (ends 17:15) but Boris can
   });
 

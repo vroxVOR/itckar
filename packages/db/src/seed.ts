@@ -5,8 +5,8 @@ import { createTenantWithOwner, registerUser } from "./auth";
 export interface SeedResult {
   tenantId: string;
   ownerId: string;
-  resources: Record<string, string>;
-  services: Record<string, string>;
+  resources: { anna: string; bob: string; chair1: string; chair2: string; room1: string };
+  services: { haircut: string; mensCut: string; colour: string; massage: string };
 }
 
 /**
