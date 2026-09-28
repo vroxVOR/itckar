@@ -12,10 +12,10 @@ import {
   type Service as SService,
   type Slot,
 } from "@itckar/scheduling";
-import type { Tx } from "./db.js";
-import { parseTstzrange, tstzrange } from "./db.js";
-import type { AppointmentSource, Tenant } from "./schema.js";
-import { enqueueJob, cancelJobsByPrefix } from "./jobs.js";
+import type { Tx } from "./db";
+import { parseTstzrange, tstzrange } from "./db";
+import type { AppointmentSource, Tenant } from "./schema";
+import { enqueueJob, cancelJobsByPrefix } from "./jobs";
 
 /* ------------------------------------------------------------------ errors */
 
@@ -79,6 +79,8 @@ export async function loadSchedulingResources(tx: Tx, opts: { onlineOnly?: boole
 
 export interface LoadedService extends SService {
   name: string;
+  description: string | null;
+  categoryId: string | null;
   priceCents: number;
   priceFrom: boolean;
   durationMin: number;
@@ -120,6 +122,8 @@ export async function loadServices(tx: Tx, serviceIds?: string[]): Promise<Loade
   return services.map((s) => ({
     id: s.id,
     name: s.name,
+    description: s.description,
+    categoryId: s.category_id,
     priceCents: s.price_cents,
     priceFrom: s.price_from,
     bookableOnline: s.bookable_online,

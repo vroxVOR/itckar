@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DateTime } from "luxon";
-import { availableIntervals, resolveLocalInterval, localDayStart } from "./availability.js";
-import type { Resource } from "./types.js";
+import { availableIntervals, resolveLocalInterval, localDayStart } from "./availability";
+import type { Resource } from "./types";
 
 const ZONE = "Europe/Prague";
 const ms = (iso: string) => DateTime.fromISO(iso, { zone: ZONE }).toMillis();

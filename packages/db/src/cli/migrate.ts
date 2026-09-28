@@ -1,5 +1,5 @@
-import { migrate } from "../migrate.js";
-import { adminPool } from "../pool.js";
+import { migrate } from "../migrate";
+import { adminPool } from "../pool";
 
 const pool = adminPool(process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL);
 migrate(pool)

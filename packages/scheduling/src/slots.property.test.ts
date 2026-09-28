@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { findSlots } from "./slots.js";
-import { availableIntervals } from "./availability.js";
-import { covers, MINUTE, overlaps } from "./intervals.js";
-import type { BusyInterval, Resource, Service, WeeklyRule } from "./types.js";
-import { t, ZONE } from "./fixtures.js";
+import { findSlots } from "./slots";
+import { availableIntervals } from "./availability";
+import { covers, MINUTE, overlaps } from "./intervals";
+import type { BusyInterval, Resource, Service, WeeklyRule } from "./types";
+import { t, ZONE } from "./fixtures";
 
 const FROM = t("2026-03-27T00:00"); // Fri .. Mon, includes DST switch on Sunday 29th
 const TO = t("2026-03-31T00:00");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { covers, intersect, normalize, subtract } from "./intervals.js";
+import { covers, intersect, normalize, subtract } from "./intervals";
 
 const iv = (s: number, e: number) => ({ start: s, end: e });
 

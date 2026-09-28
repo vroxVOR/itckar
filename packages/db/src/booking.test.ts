@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DateTime } from "luxon";
 import { sql } from "kysely";
-import { setupTestDatabase } from "./test-utils.js";
-import type { Db } from "./db.js";
-import { withTenant, withoutTenant } from "./db.js";
-import { seedDemoSalon, type SeedResult } from "./seed.js";
+import { setupTestDatabase } from "./test-utils";
+import type { Db } from "./db";
+import { withTenant, withoutTenant } from "./db";
+import { seedDemoSalon, type SeedResult } from "./seed";
 import {
   availableSlots,
   BookingError,
@@ -12,9 +12,9 @@ import {
   createAppointment,
   holdSlot,
   setAppointmentStatus,
-} from "./booking.js";
-import { createTenantWithOwner, registerUser, publicTenantBySlug } from "./auth.js";
-import type { Tenant } from "./schema.js";
+} from "./booking";
+import { createTenantWithOwner, registerUser, publicTenantBySlug } from "./auth";
+import type { Tenant } from "./schema";
 
 const ZONE = "Europe/Prague";
 const t = (iso: string) => DateTime.fromISO(iso, { zone: ZONE }).toMillis();

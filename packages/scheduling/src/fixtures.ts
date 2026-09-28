@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import type { Resource, Service, WeeklyRule } from "./types.js";
+import type { Resource, Service, WeeklyRule } from "./types";
 
 export const ZONE = "Europe/Prague";
 export const t = (iso: string) => DateTime.fromISO(iso, { zone: ZONE }).toMillis();

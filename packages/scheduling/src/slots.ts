@@ -11,9 +11,9 @@ import type {
   Resource,
   SegmentPlacement,
   Slot,
-} from "./types.js";
-import { MINUTE, covers, normalize, subtract } from "./intervals.js";
-import { availableIntervals } from "./availability.js";
+} from "./types";
+import { MINUTE, covers, normalize, subtract } from "./intervals";
+import { availableIntervals } from "./availability";
 
 /* ------------------------------------------------------------------ */
 /* Validation                                                          */

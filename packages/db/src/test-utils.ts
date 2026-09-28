@@ -1,7 +1,7 @@
 import pg from "pg";
-import { createDb, type Db } from "./db.js";
-import { migrate, resetDatabase } from "./migrate.js";
-import { adminPool } from "./pool.js";
+import { createDb, type Db } from "./db";
+import { migrate, resetDatabase } from "./migrate";
+import { adminPool } from "./pool";
 
 const ADMIN_URL = process.env.DATABASE_URL_TEST ?? "postgres://postgres@localhost:5432/itckar_test";
 

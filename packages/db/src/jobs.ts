@@ -1,6 +1,6 @@
 import { sql } from "kysely";
-import type { Db, Tx } from "./db.js";
-import type { Job } from "./schema.js";
+import type { Db, Tx } from "./db";
+import type { Job } from "./schema";
 
 export interface EnqueueInput {
   tenantId?: string | null;

@@ -1,5 +1,5 @@
-import { adminPool } from "../pool.js";
-import { migrate, resetDatabase } from "../migrate.js";
+import { adminPool } from "../pool";
+import { migrate, resetDatabase } from "../migrate";
 
 const pool = adminPool();
 resetDatabase(pool)

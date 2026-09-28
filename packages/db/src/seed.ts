@@ -1,6 +1,6 @@
-import type { Db } from "./db.js";
-import { withTenant } from "./db.js";
-import { createTenantWithOwner, registerUser } from "./auth.js";
+import type { Db } from "./db";
+import { withTenant } from "./db";
+import { createTenantWithOwner, registerUser } from "./auth";
 
 export interface SeedResult {
   tenantId: string;

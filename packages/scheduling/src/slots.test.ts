@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkSlot, findSlots, groupSlotsByDay, SchedulingError } from "./slots.js";
-import { anna, bob, chair1, chair2, colour, fmt, haircut, massage, room1, t, ZONE } from "./fixtures.js";
+import { checkSlot, findSlots, groupSlotsByDay, SchedulingError } from "./slots";
+import { anna, bob, chair1, chair2, colour, fmt, haircut, massage, room1, t, ZONE } from "./fixtures";
 
 // Monday 2026-03-23
 const DAY_FROM = t("2026-03-23T00:00");

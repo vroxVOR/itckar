@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
-import type { DateOverride, Interval, LocalInterval, Ms, Resource, WeeklyRule, Weekday } from "./types.js";
-import { normalize, clip } from "./intervals.js";
+import type { DateOverride, Interval, LocalInterval, Ms, Resource, WeeklyRule, Weekday } from "./types";
+import { normalize, clip } from "./intervals";
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 

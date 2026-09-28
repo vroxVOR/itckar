@@ -2,9 +2,10 @@ import pg from "pg";
 
 const { Pool, types } = pg;
 
-// Keep timestamptz as ISO strings; the app converts explicitly (avoids implicit local-time bugs).
-types.setTypeParser(1184, (v) => v);
-types.setTypeParser(1114, (v) => v);
+// timestamptz/timestamp come back as normalised ISO-8601 UTC strings ("2026-10-05T08:00:00.000Z"),
+// so they are safe to compare lexicographically and to Date.parse; the app converts explicitly.
+types.setTypeParser(1184, (v) => new Date(v).toISOString());
+types.setTypeParser(1114, (v) => new Date(v + "Z").toISOString());
 // int8 -> number (bigserial ids are small enough)
 types.setTypeParser(20, (v) => Number(v));
 

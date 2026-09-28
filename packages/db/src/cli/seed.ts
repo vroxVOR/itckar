@@ -1,6 +1,6 @@
-import { adminPool } from "../pool.js";
-import { createDb } from "../db.js";
-import { seedDemoSalon } from "../seed.js";
+import { adminPool } from "../pool";
+import { createDb } from "../db";
+import { seedDemoSalon } from "../seed";
 
 const pool = adminPool();
 const db = createDb(pool);

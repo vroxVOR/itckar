@@ -1,4 +1,4 @@
-import type { Interval, Ms } from "./types.js";
+import type { Interval, Ms } from "./types";
 
 export const MINUTE = 60_000;
 

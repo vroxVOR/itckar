@@ -1,9 +1,9 @@
 import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { sql } from "kysely";
-import type { Db } from "./db.js";
-import { withoutTenant } from "./db.js";
-import type { MembershipRole, Tenant, UserAccount } from "./schema.js";
+import type { Db } from "./db";
+import { withoutTenant } from "./db";
+import type { MembershipRole, Tenant, UserAccount } from "./schema";
 
 const scrypt = promisify(scryptCb);
 const SESSION_DAYS = 30;
