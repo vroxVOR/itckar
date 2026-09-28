@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { Brand } from "@/components/brand";
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(loginAction, undefined);
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <Link href="/" className="mb-8 text-lg font-semibold">itckar</Link>
+    <main className="auth-page mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
+      <Link href="/" className="mb-8 self-start" aria-label="itckar – domov"><Brand /></Link>
       <h1 className="text-2xl font-semibold">Prihlásenie</h1>
       <form action={action} className="mt-6 space-y-4">
         <div>

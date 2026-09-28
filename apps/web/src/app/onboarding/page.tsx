@@ -1,3 +1,4 @@
+import { Brand } from "@/components/brand";
 import { tenantsForUser } from "@itckar/db";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -9,7 +10,7 @@ export default async function OnboardingPage() {
   const tenants = await tenantsForUser(db(), s.user.id);
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-10">
-      <span className="mb-8 text-lg font-semibold">itckar</span>
+      <span className="mb-8"><Brand /></span>
       {tenants.length > 0 && (
         <section className="card mb-8">
           <h2 className="font-medium">Vaše prevádzky</h2>

@@ -1,11 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f0f7ff;
-  --color-brand-100: #dcecfe;
-  --color-brand-500: #2f6fed;
-  --color-brand-600: #1f5bd4;
-  --color-brand-700: #1a4ab0;
+  --color-brand-50: #eef5e8;
+  --color-brand-100: #dcebcf;
+  --color-brand-500: #397968;
+  --color-brand-600: #234f46;
+  --color-brand-700: #183c35;
+  --color-neutral-50: #f8f9f5;
+  --color-neutral-100: #f0f2ec;
+  --color-neutral-200: #e0e5db;
+  --color-neutral-300: #c8d0c4;
+  --color-neutral-400: #879286;
+  --color-neutral-500: #667263;
+  --color-neutral-600: #505e50;
+  --color-neutral-700: #394b3f;
+  --color-neutral-800: #293d32;
+  --color-neutral-900: #1e3028;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -22,7 +32,7 @@ body {
 .btn-secondary,
 .btn-danger,
 .btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors
     disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
 }
 .btn-primary {
@@ -45,7 +55,7 @@ body {
   @apply mb-1 block text-sm font-medium text-neutral-700;
 }
 .card {
-  @apply rounded-xl border border-neutral-200 bg-white p-5 shadow-xs;
+  @apply rounded-2xl border border-neutral-200 bg-white p-5;
 }
 .badge {
   @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
@@ -56,3 +66,36 @@ body {
 .nav-link[aria-current="page"] {
   @apply bg-brand-50 text-brand-700;
 }
+
+.card { box-shadow: 0 3px 12px #1e302805, 0 1px 2px #1e302803; }
+.btn-primary { box-shadow: 0 2px 3px #183c3512, inset 0 1px 0 #ffffff18; }
+h1, h2, h3 { letter-spacing: -0.025em; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-brand-600); }
+::selection { background: #d9edb0; color: #183c35; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 4px; }
+.brand { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--color-brand-600); font-size: 1.4rem; font-weight: 750; letter-spacing: -0.06em; line-height: 1; white-space: nowrap; }
+.brand-symbol { width: 32px; height: 32px; flex-shrink: 0; }
+.brand-dot { color: #699647; }
+.brand-compact { gap: 0.35rem; font-size: 1.1rem; }
+.brand-compact .brand-symbol { width: 24px; height: 24px; }
+.landing { background-image: radial-gradient(ellipse at 85% 15%, #e6edda88, transparent 55%); }
+.landing-header { border-bottom: 1px solid var(--color-neutral-200); }
+.hero-eyebrow { display: flex; align-items: center; gap: 0.5rem; color: var(--color-brand-700); font-size: 0.7rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; }
+.hero-eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #749d50; box-shadow: 0 0 0 4px #e6eedb; }
+.hero-title { line-height: 1.12; }
+.hero-title em { font-style: normal; color: var(--color-brand-600); text-decoration: underline; text-decoration-color: #d1e3b4; text-underline-offset: 0.16em; text-decoration-thickness: 0.1em; }
+.feature-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: var(--color-brand-50); color: var(--color-brand-600); margin-bottom: 1rem; }
+.feature-card:nth-child(2) .feature-icon { background: #f5ede0; color: #845d35; }
+.feature-card:nth-child(3) .feature-icon { background: #efedf6; color: #675681; }
+.app-sidebar { background: #fdfefa; }
+.nav-link[aria-current="page"] { box-shadow: inset 3px 0 var(--color-brand-600); }
+.auth-page { background-image: radial-gradient(ellipse at 50% 30%, #e6edda70, transparent 65%); }
+@media (max-width: 480px) {
+  .landing-header { flex-wrap: wrap; gap: 1rem; }
+  .landing-header nav { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+}
+
+.mobile-nav .nav-link { padding-inline: 0.5rem; }
