@@ -1,3 +1,5 @@
+import { PageHeading } from "@/components/page-heading";
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { sql, withTenant } from "@itckar/db";
 import { requireTenant } from "@/lib/session";
@@ -24,15 +26,15 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   });
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold">Klienti</h1>
-        <form className="ml-auto flex gap-2">
-          <input className="input w-64" name="q" defaultValue={q} placeholder="Meno, telefón, e-mail…" />
+      <div className="page-toolbar flex flex-wrap items-center gap-3">
+        <PageHeading title="Klienti" description="Kontakty a história návštev na jednom mieste." icon={<Users size={21} />} />
+        <form className="client-search ml-auto flex gap-2">
+          <input className="input w-64" name="q" defaultValue={q} aria-label="Hľadať klientov" placeholder="Meno, telefón, e-mail…" />
           <button className="btn-secondary">Hľadať</button>
         </form>
       </div>
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        <table className="w-full text-sm">
+      <div className="list-panel overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+        <table className="min-w-[600px] w-full text-sm">
           <thead className="bg-neutral-50 text-left text-xs uppercase text-neutral-500">
             <tr><th className="px-4 py-2">Meno</th><th className="px-4 py-2">Kontakt</th><th className="px-4 py-2 text-right">Návštevy</th><th className="px-4 py-2">Posledná</th><th className="px-4 py-2 text-right">No-show</th></tr>
           </thead>

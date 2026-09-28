@@ -16,10 +16,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/app/settings", label: t(l, "settings"), icon: Settings },
   ];
   return (
-    <div className="flex min-h-screen">
+    <div className="app-shell flex min-h-screen">
       <aside className="app-sidebar hidden w-60 shrink-0 flex-col border-r border-neutral-200 bg-white p-4 md:flex">
         <Link href="/app" className="mb-6 px-3" aria-label="itckar"><Brand /></Link>
-        <div className="mb-4 px-3">
+        <div className="tenant-switcher mb-4 px-3">
           <div className="truncate text-sm font-medium">{s.tenant.name}</div>
           <Link href={`/b/${s.tenant.slug}`} target="_blank" className="flex items-center gap-1 text-xs text-neutral-500 hover:underline">
             /b/{s.tenant.slug} <ExternalLink size={12} />
@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </NavLink>
           ))}
         </nav>
-        <div className="mt-4 border-t border-neutral-100 pt-4 text-sm">
+        <div className="account-panel mt-4 border-t border-neutral-100 pt-4 text-sm">
           <div className="truncate px-3 text-neutral-700">{s.user.name}</div>
           <div className="flex items-center justify-between px-3">
             <Link href="/onboarding" className="text-xs text-neutral-500 hover:underline">Prevádzky</Link>
@@ -53,7 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             ))}
           </nav>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="app-content flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

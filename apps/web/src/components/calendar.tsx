@@ -46,18 +46,18 @@ export function CalendarGrid({
   const colorOf = (rid: string) => resources.find((r) => r.id === rid)?.color ?? "#2f6fed";
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+    <div className="calendar-surface overflow-x-auto rounded-xl border border-neutral-200 bg-white">
       <div className="grid min-w-[640px]" style={{ gridTemplateColumns: `56px repeat(${columns.length}, minmax(140px, 1fr))` }}>
         <div className="border-b border-neutral-200" />
         {columns.map((c) => (
-          <div key={c.key} className="flex items-center gap-2 border-b border-l border-neutral-200 px-2 py-2 text-sm font-medium">
+          <div key={c.key} className="calendar-column-heading flex items-center gap-2 border-b border-l border-neutral-200 px-2 py-2 text-sm font-medium">
             {c.color && <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />}
             <span className="truncate">{c.title}</span>
           </div>
         ))}
         <div className="relative" style={{ height: totalHeight }}>
           {hours.map((h) => (
-            <div key={h} className="absolute right-2 -translate-y-2 text-xs text-neutral-400" style={{ top: (h - START_HOUR) * 60 * PX_PER_MIN }}>
+            <div key={h} className="absolute right-2 text-xs text-neutral-500" style={{ top: (h - START_HOUR) * 60 * PX_PER_MIN }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
@@ -103,7 +103,7 @@ export function CalendarGrid({
                     <Link
                       key={`${a.id}-${i}`}
                       href={`/app/appointments/${a.id}`}
-                      className="absolute inset-x-1 overflow-hidden rounded-md border px-1.5 py-0.5 text-[11px] leading-tight shadow-xs hover:brightness-95"
+                      className="calendar-event absolute inset-x-1 overflow-hidden rounded-md border px-1.5 py-0.5 text-[11px] leading-tight shadow-xs hover:brightness-95"
                       style={{
                         top: p.top,
                         height: p.height,

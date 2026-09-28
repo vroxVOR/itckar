@@ -31,3 +31,14 @@ Zdroj: https://www.nngroup.com/articles/trustworthy-design/
 
 Šírky stránok, existujúca trojstĺpcová mriežka, kalendár a formulárové akcie
 ostávajú zachované. Úvodná stránka dopĺňa jasné výzvy na akciu a panel dema.
+
+## Rozhranie prevádzky a klientov
+
+Administrácia používa spoločné hlavičky, modré aktívne položky navigácie,
+svetlé tabuľky a kalendárové panely. Rozmery časovej mriežky sa nemenia.
+Široké tabuľky a kalendár sa posúvajú vo vlastnom paneli na mobile.
+
+Verejná rezervácia zvýrazňuje aktuálny krok aj cez `aria-current="step"`,
+predchádzajúce kroky označuje ikonou a súhrn ceny drží vo vlastnej karte.
+Rovnaký štýl pokračuje v kontaktnom formulári, potvrdení a správe termínu.
+Ukážkové dáta použité pri vizuálnej kontrole nie sú súčasťou aplikácie.

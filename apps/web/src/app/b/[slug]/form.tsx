@@ -12,13 +12,13 @@ interface Props {
   locale: string;
   when: string;
   backHref: string;
-  labels: Record<"title" | "name" | "phone" | "email" | "note" | "consentSms" | "consentEmail" | "terms" | "submit" | "back", string>;
+  labels: Record<"title" | "name" | "lastName" | "phone" | "email" | "note" | "consentSms" | "consentEmail" | "terms" | "submit" | "back", string>;
 }
 
 export function BookingForm({ slug, serviceIds, staffId, startMs, locale, when, backHref, labels }: Props) {
   const [state, action, pending] = useActionState(bookAction, undefined);
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="booking-details card space-y-4">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="serviceIds" value={serviceIds.join(",")} />
       <input type="hidden" name="staffId" value={staffId} />
@@ -29,7 +29,7 @@ export function BookingForm({ slug, serviceIds, staffId, startMs, locale, when, 
       <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm capitalize">{when}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div><label className="label" htmlFor="firstName">{labels.name} *</label><input className="input" id="firstName" name="firstName" autoComplete="given-name" required /></div>
-        <div><label className="label" htmlFor="lastName">&nbsp;</label><input className="input" id="lastName" name="lastName" autoComplete="family-name" placeholder="Priezvisko" /></div>
+        <div><label className="label" htmlFor="lastName">{labels.lastName}</label><input className="input" id="lastName" name="lastName" autoComplete="family-name" placeholder={labels.lastName} /></div>
         <div><label className="label" htmlFor="phone">{labels.phone} *</label><input className="input" id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+421 900 000 000" required /></div>
         <div><label className="label" htmlFor="email">{labels.email}</label><input className="input" id="email" name="email" type="email" autoComplete="email" /></div>
       </div>

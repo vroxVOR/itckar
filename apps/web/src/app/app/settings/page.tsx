@@ -1,3 +1,5 @@
+import { PageHeading } from "@/components/page-heading";
+import { Settings } from "lucide-react";
 import { withTenant } from "@itckar/db";
 import { requireTenant } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -9,7 +11,7 @@ export default async function SettingsPage() {
   const appUrl = process.env.APP_URL ?? "";
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold">Nastavenia</h1>
+      <PageHeading title="Nastavenia" description="Vaša prevádzka, rezervovanie a pripomienky." icon={<Settings size={21} />} />
       <div className="card text-sm">
         <h2 className="font-medium">Rezervačná stránka</h2>
         <p className="mt-1">

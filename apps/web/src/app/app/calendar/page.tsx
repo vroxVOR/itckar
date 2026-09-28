@@ -40,15 +40,15 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="calendar-toolbar flex flex-wrap items-center gap-2">
         <Link href={link(from.minus(step))} className="btn-secondary px-2" aria-label="prev"><ChevronLeft size={16} /></Link>
         <Link href={link(DateTime.now().setZone(zone).startOf("day"))} className="btn-secondary">{t(s.tenant.locale, "today")}</Link>
         <Link href={link(from.plus(step))} className="btn-secondary px-2" aria-label="next"><ChevronRight size={16} /></Link>
         <h1 className="ml-2 text-lg font-semibold capitalize">{title}</h1>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-lg border border-neutral-300 bg-white p-0.5 text-sm">
-            <Link href={link(day, "day")} className={`rounded-md px-3 py-1 ${view === "day" ? "bg-neutral-900 text-white" : ""}`}>{t(s.tenant.locale, "day")}</Link>
-            <Link href={link(day, "week")} className={`rounded-md px-3 py-1 ${view === "week" ? "bg-neutral-900 text-white" : ""}`}>{t(s.tenant.locale, "week")}</Link>
+            <Link href={link(day, "day")} className={`rounded-md px-3 py-1 ${view === "day" ? "bg-brand-600 text-white" : ""}`}>{t(s.tenant.locale, "day")}</Link>
+            <Link href={link(day, "week")} className={`rounded-md px-3 py-1 ${view === "week" ? "bg-brand-600 text-white" : ""}`}>{t(s.tenant.locale, "week")}</Link>
           </div>
           <Link href={`/app/appointments/new?date=${day.toISODate()}`} className="btn-primary"><Plus size={16} /> {t(s.tenant.locale, "new_appointment")}</Link>
         </div>
