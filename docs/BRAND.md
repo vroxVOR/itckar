@@ -1,16 +1,33 @@
 # itckar — vizuálny štýl
 
-Pokojný, priateľský rezervačný systém pre malé prevádzky. Značka ostáva
-`itckar`; bodka vo wordmarku a symbol kalendára s potvrdením vyjadrujú
-prehľad a dobre naplánovaný čas.
+Pokojný, profesionálny rezervačný systém pre malé prevádzky. Značka ostáva
+`itckar`; symbol kalendára s potvrdením vyjadruje prehľad a naplánovaný čas.
 
-- Hlavná farba: lesná zelená `#234f46`, hover `#183c35`.
-- Akcent: svetlá limetková `#d9edb0`, používaná ako dekorácia na tmavej zelenej.
-- Pozadie: teplá biela `#f8f9f5`; karty ostávajú biele.
-- Text: tmavá zelenosivá `#1e3028`; sekundárny text `#505e50`.
-- Písmo: existujúci systémový sans-serif, výraznejšie nadpisy a jemné záporné prestrkanie.
-- Komponent `Brand` je spoločný pre hlavičku, prihlásenie, registráciu a administráciu.
-- Farby stavov rezervácií a používateľské farby pracovníkov majú pôvodný význam.
+## Paleta a použitie
 
-Rozloženie stránok, breakpointy, kalendárová mriežka a formulárové akcie
-ostávajú zachované. Mobilná hlavička používa kompaktnú značku.
+- Atramentová modrá `#182f4d`: logo, nadpisy, panel ukážky.
+- Modrá `#2458a6`, hover `#1b4380`: primárne tlačidlá a aktívna navigácia.
+- Tyrkysová `#147d82`: drobné akcenty; svetlá `#a9dddf` na tmavom podklade.
+- Pozadie `#f8fafc`, biele karty, sekundárny text `#4f627b`.
+- Systémový sans-serif, čitateľná hierarchia nadpisov, jemné tiene a obrysy.
+- Komponent `Brand` spája úvodnú stránku, prihlasovanie a administráciu.
+- Farby stavov a používateľské farby pracovníkov si zachovávajú význam.
+
+## Prečo modrá
+
+Alberts a van der Geest (2011) skúmali viac než 200 účastníkov a štyri palety
+na finančných, právnych a zdravotníckych weboch. Modrá dosiahla najvyššiu
+vnímanú dôveryhodnosť, ale vplyv farby bol obmedzený. Nie je to dôkaz, že
+konkrétny odtieň zvýši dôveru či konverzie v tomto produkte. Paleta je preto
+návrhovou hypotézou, ktorú treba overiť s majiteľmi salónov.
+
+Zdroj: https://research.utwente.nl/en/publications/color-matters-color-as-trustworthiness-cue-in-web-sites/
+
+NN/g zdôrazňuje profesionálne spracovanie, prehľadnosť, transparentné
+informácie a správny obsah. Úvodná stránka preto dáva priamy prístup k ukážke
+a popisuje existujúce funkcie, bez vymyslených hodnotení či počtov zákazníkov.
+
+Zdroj: https://www.nngroup.com/articles/trustworthy-design/
+
+Šírky stránok, existujúca trojstĺpcová mriežka, kalendár a formulárové akcie
+ostávajú zachované. Úvodná stránka dopĺňa jasné výzvy na akciu a panel dema.
