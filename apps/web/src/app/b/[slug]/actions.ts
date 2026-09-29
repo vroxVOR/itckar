@@ -3,11 +3,20 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { BookingError, createAppointment, publicTenantBySlug, withTenant } from "@itckar/db";
+import { BookingError, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
 import { db } from "@/lib/db";
+import { matchesHold, readHold, signHold, type HoldSelection } from "@/lib/booking-hold";
 import { bookingErrorMessage } from "@/lib/i18n";
 
+const selectionSchema = z.object({
+  slug: z.string().min(1).max(100),
+  serviceIds: z.array(z.string().uuid()).min(1).max(6),
+  staffId: z.string().uuid().or(z.literal("")),
+  startMs: z.number().int().positive(),
+});
+
 const schema = z.object({
+  holdTicket: z.string().max(32_768),
   slug: z.string(),
   serviceIds: z.array(z.string().uuid()).min(1).max(6),
   staffId: z.string().uuid().optional().or(z.literal("")),
@@ -23,10 +32,11 @@ const schema = z.object({
   website: z.string().max(0), // honeypot
 });
 
-export type BookState = { error?: string } | undefined;
+export type BookState = { error?: string; holdExpired?: boolean } | undefined;
 
 export async function bookAction(_prev: BookState, form: FormData): Promise<BookState> {
   const parsed = schema.safeParse({
+    holdTicket: form.get("holdTicket") ?? "",
     slug: form.get("slug"),
     serviceIds: String(form.get("serviceIds") ?? "").split(",").filter(Boolean),
     staffId: form.get("staffId") ?? "",
@@ -45,12 +55,18 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
   const d = parsed.data;
   const tenant = await publicTenantBySlug(db(), d.slug);
   if (!tenant) return { error: "Prevádzka neexistuje." };
+  const hold = readHold(d.holdTicket, process.env.SESSION_SECRET ?? "");
+  if (!hold || !matchesHold(hold, tenant.id, { ...d, staffId: d.staffId ?? "" })) {
+    return { error: bookingErrorMessage(tenant.locale, "hold_expired"), holdExpired: true };
+  }
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   let token: string;
   try {
     const created = await withTenant(db(), tenant.id, (tx) =>
       createAppointment(tx, tenant, {
+        holdToken: hold.holdToken,
+        assignments: hold.assignments,
         serviceIds: d.serviceIds,
         startMs: d.startMs,
         ...(d.staffId ? { pin: { staff: d.staffId } } : {}),
@@ -70,8 +86,46 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
     );
     token = created.publicToken;
   } catch (e) {
-    if (e instanceof BookingError) return { error: bookingErrorMessage(tenant.locale, e.code) };
+    if (e instanceof BookingError) return { error: bookingErrorMessage(tenant.locale, e.code), holdExpired: e.code === "hold_expired" };
     throw e;
   }
   redirect(`/b/${d.slug}/done/${token}`);
+}
+
+
+export type HoldState = { ticket: string; expiresAt: number; serverNow: number } | { error: string };
+
+/** POST-only acquisition. Rendering/prefetching a page must never reserve capacity. */
+export async function acquireHoldAction(selection: HoldSelection, previousTicket = ""): Promise<HoldState> {
+  const parsed = selectionSchema.safeParse(selection);
+  if (!parsed.success) return { error: bookingErrorMessage("sk", "slot_unavailable") };
+  const d = parsed.data;
+  const tenant = await publicTenantBySlug(db(), d.slug);
+  if (!tenant) return { error: bookingErrorMessage("sk", "slot_unavailable") };
+  const secret = process.env.SESSION_SECRET ?? "";
+  const previous = readHold(previousTicket, secret);
+  try {
+    return await withTenant(db(), tenant.id, async (tx) => {
+      if (previous && matchesHold(previous, tenant.id, d)) {
+        const live = await tx.selectFrom("resource_block").select("expires_at")
+          .where("hold_token", "=", previous.holdToken).where("expires_at", ">", new Date().toISOString()).executeTakeFirst();
+        if (live) return { ticket: previousTicket, expiresAt: previous.expiresAt, serverNow: Date.now() };
+      }
+      const hold = await holdSlot(tx, tenant, {
+        serviceIds: d.serviceIds, startMs: d.startMs, ttlMin: 5,
+        ...(d.staffId ? { pin: { staff: d.staffId } } : {}),
+      });
+      const expiresAt = hold.expiresAt.getTime();
+      return { ticket: signHold({ ...d, tenantId: tenant.id, holdToken: hold.token, assignments: hold.slot.assignments, expiresAt }, secret), expiresAt, serverNow: Date.now() };
+    });
+  } catch (e) {
+    if (e instanceof BookingError) return { error: bookingErrorMessage(tenant.locale, e.code) };
+    throw e;
+  }
+}
+
+export async function releaseHoldAction(raw: string): Promise<void> {
+  const hold = readHold(raw, process.env.SESSION_SECRET ?? "");
+  if (!hold) return;
+  await withTenant(db(), hold.tenantId, (tx) => releaseHold(tx, hold.holdToken));
 }

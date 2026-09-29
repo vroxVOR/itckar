@@ -53,3 +53,25 @@ worker  →  claimJobs (FOR UPDATE SKIP LOCKED) → handlers → providers → n
   `DATABASE_URL` (rola `itckar_app`) pre aplikáciu a worker.
 - Worker je idempotentný (dedupe_key), viac inštancií je bezpečných (SKIP LOCKED).
 - Logy neobsahujú PII okrem console providerov v dev režime.
+
+
+## Podržanie online termínu
+
+Otvorenie posledného kroku spustí klientsku server action (POST) `acquireHoldAction`.
+Samotné vykreslenie alebo prefetch stránky nezapisuje do databázy. `holdSlot`
+vytvorí bloky na päť minút. Podpísaný token viaže tenant, poradie služieb,
+čas, vybraného pracovníka a konkrétne priradené zdroje. `bookAction` tieto údaje
+porovná s formulárom a odošle `holdToken` a pôvodné priradenia do `createAppointment`.
+Databázový zámok chráni jednorazové spotrebovanie podržania; kontroluje sa aj expirácia.
+
+Token sa uchováva v sessionStorage danej karty prehliadača. Obnovenie stránky
+ho overí proti databáze a nemení jeho pôvodnú expiráciu. Pri vypnutej storage
+funguje token v pamäti; obnovenie môže vyžadovať počkať na vypršanie pôvodného
+podržania. Tlačidlo Späť ho uvoľní, zatvorenie karty ponechá päťminútovú expiráciu.
+Obnova po vypršaní zachová vyplnené kontaktné údaje. Odpočet zohľadňuje rozdiel
+medzi časom servera a zariadenia. Token nie je v URL a neobsahuje kontaktné údaje.
+
+Cielený E2E test `apps/web/e2e/hold-flow.mjs` vyžaduje lokálnu, jednorazovú,
+seedovanú databázu a bežiacu aplikáciu. Overí dva prehliadače, refresh, uvoľnenie,
+expiráciu, obnovu a potvrdenie. Verejný rate limiting a overenie telefónu zostávajú
+samostatným krokom roadmapy.
