@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { BookingError, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
+import { BookingError, completeWaitlistEntry, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
 import { db } from "@/lib/db";
 import { matchesHold, readHold, signHold, type HoldSelection } from "@/lib/booking-hold";
 import { bookingErrorMessage } from "@/lib/i18n";
@@ -16,6 +16,7 @@ const selectionSchema = z.object({
 });
 
 const schema = z.object({
+  waitlistToken: z.string().regex(/^(?:[a-f0-9]{48})?$/),
   holdTicket: z.string().max(32_768),
   slug: z.string(),
   serviceIds: z.array(z.string().uuid()).min(1).max(6),
@@ -36,6 +37,7 @@ export type BookState = { error?: string; holdExpired?: boolean } | undefined;
 
 export async function bookAction(_prev: BookState, form: FormData): Promise<BookState> {
   const parsed = schema.safeParse({
+    waitlistToken: form.get("waitlistToken") ?? "",
     holdTicket: form.get("holdTicket") ?? "",
     slug: form.get("slug"),
     serviceIds: String(form.get("serviceIds") ?? "").split(",").filter(Boolean),
@@ -63,8 +65,8 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   let token: string;
   try {
-    const created = await withTenant(db(), tenant.id, (tx) =>
-      createAppointment(tx, tenant, {
+    const created = await withTenant(db(), tenant.id, async (tx) => {
+      const appointment = await createAppointment(tx, tenant, {
         holdToken: hold.holdToken,
         assignments: hold.assignments,
         serviceIds: d.serviceIds,
@@ -82,8 +84,10 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
           ...(ip ? { consentIp: ip } : {}),
         },
         source: "online",
-      }),
-    );
+      });
+      await completeWaitlistEntry(tx, { token: d.waitlistToken, appointmentId: appointment.id, serviceIds: d.serviceIds, startMs: d.startMs, staffId: d.staffId ?? "" });
+      return appointment;
+    });
     token = created.publicToken;
   } catch (e) {
     if (e instanceof BookingError) return { error: bookingErrorMessage(tenant.locale, e.code), holdExpired: e.code === "hold_expired" };

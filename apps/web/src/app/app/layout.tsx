@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Brand } from "@/components/brand";
-import { CalendarDays, Users, Scissors, UserRound, Settings, ExternalLink } from "lucide-react";
+import { Clock3, CalendarDays, Users, Scissors, UserRound, Settings, ExternalLink } from "lucide-react";
 import { requireTenant } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import { NavLink } from "@/components/nav-link";
@@ -10,6 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const l = s.tenant.locale;
   const nav = [
     { href: "/app/calendar", label: t(l, "calendar"), icon: CalendarDays },
+    { href: "/app/waitlist", label: "Čakatelia", icon: Clock3 },
     { href: "/app/clients", label: t(l, "clients"), icon: Users },
     { href: "/app/services", label: t(l, "services"), icon: Scissors },
     { href: "/app/staff", label: t(l, "staff"), icon: UserRound },

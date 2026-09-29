@@ -1,3 +1,4 @@
+import { handleWaitlistJob } from "./waitlist";
 import { withTenant, type Db, type Job, type Tx } from "@itckar/db";
 import type { EmailProvider, SmsProvider } from "./providers/types";
 import { rescheduledEmail, rescheduledSms, cancelledEmail, cancelledSms, confirmationEmail, confirmationSms, reminderEmail, reminderSms, type TemplateInput } from "./templates";
@@ -82,6 +83,7 @@ async function deliver(
 }
 
 export async function handleJob(ctx: HandlerContext, job: Job): Promise<void> {
+  if (job.kind === "waitlist.match" || job.kind === "waitlist.notify") return handleWaitlistJob(ctx, job);
   const payload = job.payload as { appointmentId?: string; hoursBefore?: number; startMs?: number; by?: string };
   if (!job.tenant_id) throw new Error(`job ${job.id} has no tenant`);
   const load = () => withTenant(ctx.db, job.tenant_id!, (tx) => loadAppointment(tx, payload.appointmentId!, ctx.appUrl));

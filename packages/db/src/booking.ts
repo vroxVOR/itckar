@@ -720,6 +720,11 @@ export async function cancelAppointment(
     payload: { appointmentId: appt.id, by: q.by },
     dedupeKey: `cancelled:${appt.id}`,
   });
+  // Matching is independent of cancellation delivery (a provider failure must not block the waitlist).
+  await enqueueJob(tx, {
+    tenantId: tenant.id, kind: "waitlist.match", payload: { appointmentId: appt.id },
+    dedupeKey: `waitlist-match:${appt.id}`,
+  });
 }
 
 export async function setAppointmentStatus(
