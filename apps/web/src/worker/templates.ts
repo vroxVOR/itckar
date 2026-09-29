@@ -99,3 +99,15 @@ export function rescheduledEmail(i: TemplateInput): { subject: string; text: str
     text: rescheduledSms(i),
   };
 }
+
+export function waitlistMessage(i: TemplateInput): { subject: string; text: string } {
+  const l = L(i.locale);
+  return {
+    subject: { cs: `Volný termín – ${i.tenantName}`, sk: `Voľný termín – ${i.tenantName}`, en: `An appointment is available – ${i.tenantName}` }[l],
+    text: {
+      cs: `${i.tenantName}: uvolnil se termín ${when(i)} (${i.services.join(", ")}). Nabídka není rezervace. Dostupnost ověříme při rezervování. Rezervace nebo ukončení čekání: ${i.manageUrl}`,
+      sk: `${i.tenantName}: uvoľnil sa termín ${when(i)} (${i.services.join(", ")}). Ponuka nie je rezervácia. Dostupnosť overíme pri rezervovaní. Rezervácia alebo ukončenie čakania: ${i.manageUrl}`,
+      en: `${i.tenantName}: an appointment is available on ${when(i)} (${i.services.join(", ")}). This is not a reservation. Availability is checked when booking. Book or leave the waitlist: ${i.manageUrl}`,
+    }[l],
+  };
+}

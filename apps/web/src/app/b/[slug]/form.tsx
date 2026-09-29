@@ -8,6 +8,7 @@ import { t } from "@/lib/i18n";
 import { bookAction } from "./actions";
 
 interface Props {
+  waitlistToken?: string;
   slug: string;
   serviceIds: string[];
   staffId: string;
@@ -18,7 +19,7 @@ interface Props {
   labels: Record<"title" | "name" | "lastName" | "phone" | "email" | "note" | "consentSms" | "consentEmail" | "terms" | "submit" | "back", string>;
 }
 
-export function BookingForm({ slug, serviceIds, staffId, startMs, locale, when, backHref, labels }: Props) {
+export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, startMs, locale, when, backHref, labels }: Props) {
   const [state, action, pending] = useActionState(bookAction, undefined);
   const router = useRouter();
   const { hold, seconds, retry, release } = useBookingHold({ slug, serviceIds, staffId, startMs }, t(locale, "error_generic"));
@@ -33,6 +34,7 @@ export function BookingForm({ slug, serviceIds, staffId, startMs, locale, when, 
       if (!ready || pending || leaving) e.preventDefault();
       else setSubmittedTicket(ticket);
     }}>
+      <input type="hidden" name="waitlistToken" value={waitlistToken} />
       <input type="hidden" name="holdTicket" value={ticket} />
       <div className={`hold-notice ${expired || (hold && "error" in hold) ? "hold-notice-warning" : ""}`}>
         <p role="status">{!hold ? t(locale, "hold_loading") : "error" in hold ? hold.error : expired ? t(locale, "err_hold_expired") : t(locale, "hold_active")}</p>

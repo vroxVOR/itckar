@@ -6,3 +6,4 @@ export * from "./booking";
 export * from "./jobs";
 export * from "./auth";
 export * from "./seed";
+export * from "./waitlist";

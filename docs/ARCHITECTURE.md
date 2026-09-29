@@ -84,3 +84,16 @@ Admin presúva budúcu čakajúcu alebo potvrdenú rezerváciu v detaile alebo p
 `rescheduleAppointment` v jednej tenantovej transakcii zamkne rezerváciu, overí pôvodný čas proti zastaranému formuláru, nahradí bloky chránené exclusion constraintom a zapíše audit. Zrušenie a zmena stavu používajú rovnaký riadkový zámok. Staré čakajúce pripomienky sa zrušia a nové dostanú jedinečné kľúče; worker odmietne úlohu so zastaraným časom. Rozbehnuté odoslanie externému poskytovateľovi nemožno vziať späť. Nový worker musí byť nasadený spolu s webom, aby spracoval `appointment.rescheduled`.
 
 Čas sa interpretuje v pásme prevádzky. Formulár odmieta neexistujúce alebo dvojznačné miestne časy pri zmene letného času. Pri touch zariadeniach a klávesnici slúži formulár v detaile. Overenie: databázové testy plus `apps/web/e2e/reschedule-flow.mjs` proti lokálnej, jednorazovej databáze bez notifikačného workera.
+
+
+## Čakatelia (M2, prvá verzia)
+
+`waitlist_entry` je tenantová tabuľka s RLS a zloženými FK na klienta, personál a vytvorenú rezerváciu. Žiadosť vytvorí prihlásený personál po potvrdení, že klient požiadal o upozornenie. Vyberie existujúceho klienta, 1–6 online služieb, voliteľný personál, rozsah celých dní v pásme prevádzky a jeden kanál (e-mail alebo SMS). Presná aktívna duplicita je blokovaná unikátnym indexom. Verejné prihlasovanie zatiaľ nie je implementované.
+
+Zrušenie rezervácie transakčne vytvorí samostatný job `waitlist.match`, nezávislý od doručenia správy o zrušení. Matcher v dávkach po 25 overí aktuálnu dostupnosť cez engine vrátane otváracích hodín, holdov, zdrojov a online pravidiel. Ponúkne len celý balík služieb, ktorý sa zmestí do uvoľneného intervalu a využíva niektorý z uvoľnených zdrojov. Zvyšné žiadosti spracuje pokračovací job. Riadkové zámky a verzie ponuky bránia dvojitému vytvoreniu notifikačných jobov.
+
+`waitlist.notify` opäť preverí dostupnosť tesne pred odoslaním. Ak termín už nie je voľný, žiadosť vráti do stavu `waiting` a správu označí ako preskočenú. Pri dočasnom zlyhaní poskytovateľa sa opakuje existujúci job; úspešne zaznamenaná správa sa pri opakovaní neposiela znova. Ako pri ostatných notifikáciách, zlyhanie procesu medzi odoslaním poskytovateľovi a zápisom do DB môže viesť k duplicitnej správe; rozbehnuté odoslanie nemožno odvolať.
+
+Odkaz `/w/{slug}/{token}` používa náhodný 192-bitový token, neobsahuje osobné údaje a GET nemá vedľajšie účinky. Klient môže čakanie ukončiť cez POST alebo pokračovať do existujúcej rezervácie s päťminútovým holdom. Ponuka sama termín neblokuje a môže ju dostať viac čakateľov. Úspešná rezervácia presného výberu označí žiadosť ako `booked` v rovnakej transakcii. Jedna žiadosť dostane najviac jednu úspešne odoslanú ponuku; ďalšie čakanie si vyžaduje novú žiadosť. Uplynulé obdobia sa v admin prehľade zobrazujú v histórii.
+
+Nasadenie: najprv migrácia `0003_waitlist.sql`, potom web aj worker s podporou nových jobov. Ak nový worker ešte nie je nasadený, nové joby nesmie spracúvať stará verzia. Testovanie: `packages/db/src/waitlist.test.ts` a lokálny `apps/web/e2e/waitlist-flow.mts` (používa iba falošných poskytovateľov, nič externe neposiela).

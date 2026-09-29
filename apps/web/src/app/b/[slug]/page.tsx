@@ -11,7 +11,7 @@ import { BookingForm } from "./form";
 
 export const dynamic = "force-dynamic";
 
-type SP = { s?: string | string[]; staff?: string; d?: string; t?: string };
+type SP = { s?: string | string[]; staff?: string; d?: string; t?: string; w?: string };
 
 export default async function BookingPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<SP> }) {
   const { slug } = await params;
@@ -35,7 +35,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const base = `/b/${slug}`;
   const q = (extra: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    const merged = { s: selectedIds.join(","), staff: sp.staff, d: sp.d, t: sp.t, ...extra };
+    const merged = { s: selectedIds.join(","), staff: sp.staff, d: sp.d, t: sp.t, w: sp.w, ...extra };
     for (const [k, v] of Object.entries(merged)) if (v !== undefined && v !== "") p.set(k, v);
     else if (k === "staff" && v === "") p.set(k, "");
     return `${base}?${p.toString()}`;
@@ -155,6 +155,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
           {step === 4 && (
             <BookingForm
               key={`${slug}:${selectedIds.join(",")}:${staffPin?.staff ?? ""}:${sp.t}`}
+              waitlistToken={sp.w ?? ""}
               slug={slug}
               serviceIds={selectedIds}
               staffId={staffPin?.staff ?? ""}

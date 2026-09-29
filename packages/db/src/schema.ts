@@ -285,7 +285,29 @@ export interface NotificationTable {
   created_at: TimestampGenerated;
 }
 
+export interface WaitlistEntryTable {
+  id: Generated<UUID>;
+  tenant_id: UUID;
+  client_id: UUID;
+  service_ids: UUID[];
+  staff_id: UUID | null;
+  from_at: Timestamp;
+  until_at: Timestamp;
+  channel: "email" | "sms";
+  status: Generated<"waiting" | "offered" | "notified" | "closed" | "booked">;
+  public_token: Generated<string>;
+  offer_version: Generated<number>;
+  offered_start_at: Timestamp | null;
+  offered_end_at: Timestamp | null;
+  notification_id: number | null;
+  booked_appointment_id: UUID | null;
+  requested_at: TimestampGenerated;
+  created_by: UUID;
+}
+export type WaitlistEntry = Selectable<WaitlistEntryTable>;
+
 export interface DB {
+  waitlist_entry: WaitlistEntryTable;
   tenant: TenantTable;
   user_account: UserAccountTable;
   membership: MembershipTable;

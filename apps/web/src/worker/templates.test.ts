@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmationEmail, confirmationSms, reminderSms } from "./templates";
+import { confirmationEmail, confirmationSms, reminderSms, waitlistMessage } from "./templates";
 
 const input = {
   locale: "sk",
@@ -31,4 +31,11 @@ describe("notification templates", () => {
     expect(e.text).toContain("Kto: Anna");
     expect(e.text).toContain("Kde: Hlavná 1");
   });
+});
+
+it("waitlist offers explain that the slot is not reserved in each supported locale", () => {
+  expect(waitlistMessage(input).text).toContain("Ponuka nie je rezervácia");
+  expect(waitlistMessage({ ...input, locale: "cs" }).text).toContain("Nabídka není rezervace");
+  expect(waitlistMessage({ ...input, locale: "en" }).text).toContain("This is not a reservation");
+  expect(waitlistMessage(input).text).toContain(input.manageUrl);
 });
