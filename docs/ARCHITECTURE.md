@@ -97,3 +97,22 @@ Zrušenie rezervácie transakčne vytvorí samostatný job `waitlist.match`, nez
 Odkaz `/w/{slug}/{token}` používa náhodný 192-bitový token, neobsahuje osobné údaje a GET nemá vedľajšie účinky. Klient môže čakanie ukončiť cez POST alebo pokračovať do existujúcej rezervácie s päťminútovým holdom. Ponuka sama termín neblokuje a môže ju dostať viac čakateľov. Úspešná rezervácia presného výberu označí žiadosť ako `booked` v rovnakej transakcii. Jedna žiadosť dostane najviac jednu úspešne odoslanú ponuku; ďalšie čakanie si vyžaduje novú žiadosť. Uplynulé obdobia sa v admin prehľade zobrazujú v histórii.
 
 Nasadenie: najprv migrácia `0003_waitlist.sql`, potom web aj worker s podporou nových jobov. Ak nový worker ešte nie je nasadený, nové joby nesmie spracúvať stará verzia. Testovanie: `packages/db/src/waitlist.test.ts` a lokálny `apps/web/e2e/waitlist-flow.mts` (používa iba falošných poskytovateľov, nič externe neposiela).
+
+
+## Limity verejných rezervačných akcií
+
+Migrácia `0004_public_action_limits.sql` pridáva tenantovú tabuľku s RLS. Atomický upsert zdieľa počítadlá medzi procesmi aj replikami a používa hodiny PostgreSQL. Limity sa zapisujú v samostatnej transakcii pred rezervačnou operáciou; neúspešná alebo konfliktná rezervácia preto pokus nevráti. Prekročenie nemení koniec okna, počítadlo je zastropované a odpoveď obsahuje počet sekúnd do ďalšieho pokusu v cs/sk/en.
+
+| Akcia | Klient | Prevádzka | Okno |
+|---|---:|---:|---|
+| Nový hold | 12 | 300 | 5 minút |
+| Potvrdenie rezervácie | 8 | 120 | 10 minút |
+| Verejné zrušenie | 20 | 120 | 10 minút |
+
+Klientsky limit je podmienený dôveryhodnou konfiguráciou `RATE_LIMIT_IP_HEADER`. Nastavte ho až za proxy, ktorá hlavičku **prepíše**, odstráni hodnoty od klienta a zabráni priamemu prístupu na origin. Ak hostiteľ neposkytuje takúto záruku, ponechajte nastavenie prázdne. Aplikácia automaticky neverí `X-Forwarded-For`; zoznamy adries, porty a neplatné hodnoty odmietne. Bez overiteľnej adresy platí tenantový strop. IPv4-mapped IPv6 sa normalizuje na IPv4; IPv6 adresy sa zoskupujú podľa /64. Zdieľané siete sa delia o klientsky rozpočet.
+
+Databáza uchováva iba HMAC identifikátor oddelený podľa tenanta (kľúč `SESSION_SECRET`), nie surové IP adresy. Rotácia tajomstva vytvorí nové rozpočty. Po prekročení tenantového stropu sa nové klientské počítadlá nevytvárajú; zablokovaný klient naopak nemíňa tenantový rozpočet. Expirácie staršie než deň sa priebežne mažú v obmedzených dávkach pri povolených požiadavkách tenanta. Neaktívnym tenantom sa záznamy odstránia pri ďalšej prevádzke alebo odstránení tenanta.
+
+Opätovné použitie platného podpísaného holdu nie je nový hold a limit nemíňa. Uvoľnenie podpísaného holdu ani ukončenie čakania cez tajný odkaz neblokujeme; obe sú idempotentné a nemajú vytvárať ďalšiu záťaž alebo notifikácie. Táto vrstva chráni rezervácie, nie všeobecné čítania, prihlasovanie či registráciu. V produkcii dopĺňa limity na proxy, nenahrádza ochranu pred sieťovým DDoS. SMS overenie telefónu je samostatný nasledujúci krok.
+
+Nasadenie: najprv migrácia 0004, potom web. `SESSION_SECRET` musí byť rovnaký na všetkých replikách. Limity sa pri výpadku DB neobchádzajú. E2E test `apps/web/e2e/public-limits-flow.mts` používa samostatnú lokálnu DB a server s testovacou hlavičkou `RATE_LIMIT_IP_HEADER=x-test-client-ip`; nie je určený pre produkčný server.

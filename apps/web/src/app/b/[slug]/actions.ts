@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { BookingError, completeWaitlistEntry, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
+import { checkPublicActionLimit, publicLimitMessage } from "@/lib/public-action-limit";
 import { db } from "@/lib/db";
 import { matchesHold, readHold, signHold, type HoldSelection } from "@/lib/booking-hold";
 import { bookingErrorMessage } from "@/lib/i18n";
@@ -18,7 +19,7 @@ const selectionSchema = z.object({
 const schema = z.object({
   waitlistToken: z.string().regex(/^(?:[a-f0-9]{48})?$/),
   holdTicket: z.string().max(32_768),
-  slug: z.string(),
+  slug: z.string().min(1).max(100),
   serviceIds: z.array(z.string().uuid()).min(1).max(6),
   staffId: z.string().uuid().optional().or(z.literal("")),
   startMs: z.coerce.number().int().positive(),
@@ -33,7 +34,7 @@ const schema = z.object({
   website: z.string().max(0), // honeypot
 });
 
-export type BookState = { error?: string; holdExpired?: boolean } | undefined;
+export type BookState = { error?: string; holdExpired?: boolean; retryAfterSeconds?: number } | undefined;
 
 export async function bookAction(_prev: BookState, form: FormData): Promise<BookState> {
   const parsed = schema.safeParse({
@@ -57,6 +58,8 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
   const d = parsed.data;
   const tenant = await publicTenantBySlug(db(), d.slug);
   if (!tenant) return { error: "Prevádzka neexistuje." };
+  const retryAfterSeconds = await checkPublicActionLimit(tenant.id, "book");
+  if (retryAfterSeconds) return { error: publicLimitMessage(tenant.locale, retryAfterSeconds), retryAfterSeconds };
   const hold = readHold(d.holdTicket, process.env.SESSION_SECRET ?? "");
   if (!hold || !matchesHold(hold, tenant.id, { ...d, staffId: d.staffId ?? "" })) {
     return { error: bookingErrorMessage(tenant.locale, "hold_expired"), holdExpired: true };
@@ -97,7 +100,7 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
 }
 
 
-export type HoldState = { ticket: string; expiresAt: number; serverNow: number } | { error: string };
+export type HoldState = { ticket: string; expiresAt: number; serverNow: number } | { error: string; retryAfterSeconds?: number };
 
 /** POST-only acquisition. Rendering/prefetching a page must never reserve capacity. */
 export async function acquireHoldAction(selection: HoldSelection, previousTicket = ""): Promise<HoldState> {
@@ -109,12 +112,14 @@ export async function acquireHoldAction(selection: HoldSelection, previousTicket
   const secret = process.env.SESSION_SECRET ?? "";
   const previous = readHold(previousTicket, secret);
   try {
+    if (previous && matchesHold(previous, tenant.id, d)) {
+      const live = await withTenant(db(), tenant.id, (tx) => tx.selectFrom("resource_block").select("expires_at")
+        .where("hold_token", "=", previous.holdToken).where("expires_at", ">", new Date().toISOString()).executeTakeFirst());
+      if (live) return { ticket: previousTicket, expiresAt: previous.expiresAt, serverNow: Date.now() };
+    }
+    const retryAfterSeconds = await checkPublicActionLimit(tenant.id, "hold");
+    if (retryAfterSeconds) return { error: publicLimitMessage(tenant.locale, retryAfterSeconds), retryAfterSeconds };
     return await withTenant(db(), tenant.id, async (tx) => {
-      if (previous && matchesHold(previous, tenant.id, d)) {
-        const live = await tx.selectFrom("resource_block").select("expires_at")
-          .where("hold_token", "=", previous.holdToken).where("expires_at", ">", new Date().toISOString()).executeTakeFirst();
-        if (live) return { ticket: previousTicket, expiresAt: previous.expiresAt, serverNow: Date.now() };
-      }
       const hold = await holdSlot(tx, tenant, {
         serviceIds: d.serviceIds, startMs: d.startMs, ttlMin: 5,
         ...(d.staffId ? { pin: { staff: d.staffId } } : {}),

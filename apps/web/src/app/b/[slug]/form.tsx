@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useBookingHold } from "./use-booking-hold";
 import { t } from "@/lib/i18n";
@@ -22,6 +22,13 @@ interface Props {
 export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, startMs, locale, when, backHref, labels }: Props) {
   const [state, action, pending] = useActionState(bookAction, undefined);
   const router = useRouter();
+  // Server-action denials must not erase contact details or consent choices.
+  const [details, setDetails] = useState({ firstName: "", lastName: "", phone: "", email: "", note: "" });
+  const [consents, setConsents] = useState({ sms: false, email: false });
+  const field = (name: keyof typeof details) => ({
+    value: details[name],
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDetails((current) => ({ ...current, [name]: event.target.value })),
+  });
   const { hold, seconds, retry, release } = useBookingHold({ slug, serviceIds, staffId, startMs }, t(locale, "error_generic"));
   const [submittedTicket, setSubmittedTicket] = useState("");
   const [leaving, setLeaving] = useState(false);
@@ -50,18 +57,18 @@ export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, sta
       <h2 className="font-medium">{labels.title}</h2>
       <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm capitalize">{when}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div><label className="label" htmlFor="firstName">{labels.name} *</label><input className="input" id="firstName" name="firstName" autoComplete="given-name" required /></div>
-        <div><label className="label" htmlFor="lastName">{labels.lastName}</label><input className="input" id="lastName" name="lastName" autoComplete="family-name" placeholder={labels.lastName} /></div>
-        <div><label className="label" htmlFor="phone">{labels.phone} *</label><input className="input" id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+421 900 000 000" required /></div>
-        <div><label className="label" htmlFor="email">{labels.email}</label><input className="input" id="email" name="email" type="email" autoComplete="email" /></div>
+        <div><label className="label" htmlFor="firstName">{labels.name} *</label><input className="input" id="firstName" name="firstName" {...field("firstName")} autoComplete="given-name" required /></div>
+        <div><label className="label" htmlFor="lastName">{labels.lastName}</label><input className="input" id="lastName" name="lastName" {...field("lastName")} autoComplete="family-name" placeholder={labels.lastName} /></div>
+        <div><label className="label" htmlFor="phone">{labels.phone} *</label><input className="input" id="phone" name="phone" {...field("phone")} type="tel" autoComplete="tel" placeholder="+421 900 000 000" required /></div>
+        <div><label className="label" htmlFor="email">{labels.email}</label><input className="input" id="email" name="email" {...field("email")} type="email" autoComplete="email" /></div>
       </div>
-      <div><label className="label" htmlFor="note">{labels.note}</label><textarea className="input" id="note" name="note" rows={2} /></div>
+      <div><label className="label" htmlFor="note">{labels.note}</label><textarea className="input" id="note" name="note" {...field("note")} rows={2} /></div>
       <div className="space-y-1 text-sm">
-        <label className="flex items-center gap-2"><input type="checkbox" name="consentSms" /> {labels.consentSms}</label>
-        <label className="flex items-center gap-2"><input type="checkbox" name="consentEmail" /> {labels.consentEmail}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="consentSms" checked={consents.sms} onChange={(e) => setConsents((c) => ({ ...c, sms: e.target.checked }))} /> {labels.consentSms}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="consentEmail" checked={consents.email} onChange={(e) => setConsents((c) => ({ ...c, email: e.target.checked }))} /> {labels.consentEmail}</label>
         <p className="text-xs text-neutral-500">{labels.terms}</p>
       </div>
-      {state?.error && !state.holdExpired && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state?.error && !state.holdExpired && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <div className="flex items-center gap-3">
         <button className="btn-primary" disabled={pending || !ready || leaving}>{pending ? "…" : labels.submit}</button>
         <Link href={backHref} aria-disabled={pending || leaving} onClick={async (e) => {
