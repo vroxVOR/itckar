@@ -216,9 +216,25 @@ describe("cancel, status, holds", () => {
       holdSlot(tx, tenant, { serviceIds: [seed.services.haircut], startMs: start2, nowMs: Date.now() - 60 * 60_000, ttlMin: 5 }),
     );
     expect(hold2.expiresAt.getTime()).toBeLessThan(Date.now());
+    await expect(withTenant(app, tenant.id, (tx) => createAppointment(tx, tenant, {
+      ...other, startMs: start2, assignments: hold2.slot.assignments, holdToken: hold2.token,
+    }))).rejects.toMatchObject({ code: "hold_expired" });
     const ok = await withTenant(app, tenant.id, (tx) => createAppointment(tx, tenant, { ...other, startMs: start2, assignments: hold2.slot.assignments }));
     expect(ok.startMs).toBe(start2);
   });
+  it("only consumes a hold once under concurrent submissions", async () => {
+    const start = DateTime.now().setZone(ZONE).plus({ weeks: 2 }).startOf("week").set({ hour: 10 }).toMillis();
+    const hold = await withTenant(app, tenant.id, (tx) => holdSlot(tx, tenant, {
+      serviceIds: [seed.services.haircut], startMs: start,
+    }));
+    const input = { serviceIds: [seed.services.haircut], startMs: start, assignments: hold.slot.assignments,
+      holdToken: hold.token, client: clientAnna, source: "online" as const };
+    const results = await Promise.allSettled([1, 2].map(() => withTenant(app, tenant.id, (tx) => createAppointment(tx, tenant, input))));
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(rejected.reason).toMatchObject({ code: "hold_expired" });
+  });
+
 });
 
 describe("row level security", () => {

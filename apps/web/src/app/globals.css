@@ -250,3 +250,6 @@ a:focus-visible, button:focus-visible {
 .booking-summary li > span:last-child,
 .receipt-card li > span:last-child { flex-shrink: 0; white-space: nowrap; }
 .booking-details input[type="checkbox"] { flex-shrink: 0; }
+
+.hold-notice { padding: 0.85rem 1rem; border: 1px solid #c9dff5; border-radius: 12px; background: #edf4fc; color: #1b4380; font-size: 0.8rem; line-height: 1.5; }
+.hold-notice-warning { background: #fff8ed; border-color: #edd5ab; color: #805416; }

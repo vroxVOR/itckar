@@ -154,6 +154,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
 
           {step === 4 && (
             <BookingForm
+              key={`${slug}:${selectedIds.join(",")}:${staffPin?.staff ?? ""}:${sp.t}`}
               slug={slug}
               serviceIds={selectedIds}
               staffId={staffPin?.staff ?? ""}

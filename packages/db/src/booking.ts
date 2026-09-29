@@ -474,8 +474,9 @@ export async function createAppointment(tx: Tx, tenant: Tenant, input: CreateApp
       .selectFrom("resource_block")
       .select(["expires_at"])
       .where("hold_token", "=", input.holdToken)
+      .forUpdate()
       .executeTakeFirst();
-    if (!hold) throw new BookingError("hold_expired");
+    if (!hold?.expires_at || Date.parse(hold.expires_at) <= Math.max(now, Date.now())) throw new BookingError("hold_expired");
     await releaseHold(tx, input.holdToken);
   }
   await purgeExpiredHolds(tx);

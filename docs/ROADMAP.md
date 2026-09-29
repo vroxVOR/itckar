@@ -13,7 +13,7 @@
 
 1. Drag-and-drop presun rezervácie v kalendári (`ignoreRef` v engine už presun podporuje).
 2. Zoznam čakateľov na zrušené termíny (job `appointment.cancelled` → notifikácia čakateľom).
-3. Hold slotu počas vypĺňania formulára (`holdSlot` existuje v db vrstve, UI ho zatiaľ nepoužíva).
+3. ✅ Päťminútové podržanie termínu počas vypĺňania formulára: odpočet, opätovné overenie po vypršaní, uvoľnenie cez Späť a podpísané naviazanie na výber.
 4. Rate limiting verejných akcií a overenie telefónu (SMS kód) pri prvej rezervácii.
 5. Vlastná doména / white-label branding v platenom pláne.
 6. Overenie cenníkov konkurencie a §116 novely na citovaných URL (viď report, „Metodologické obmedzenia“).
