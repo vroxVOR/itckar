@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { DateTime } from "luxon";
 import { z } from "zod";
-import { BookingError, cancelAppointment, createAppointment, setAppointmentStatus, withTenant } from "@itckar/db";
+import { BookingError, rescheduleAppointment, cancelAppointment, createAppointment, setAppointmentStatus, withTenant } from "@itckar/db";
 import { db } from "@/lib/db";
 import { requireTenant } from "@/lib/session";
 import { bookingErrorMessage } from "@/lib/i18n";
@@ -90,4 +90,38 @@ export async function cancelAction(form: FormData): Promise<void> {
   );
   revalidatePath("/app/calendar");
   redirect("/app/calendar");
+}
+
+export type RescheduleState = { error?: string; success?: boolean } | undefined;
+
+export async function rescheduleAction(_prev: RescheduleState, form: FormData): Promise<RescheduleState> {
+  const s = await requireTenant();
+  const parsed = z.object({
+    id: z.string().uuid(), expectedStart: z.coerce.number().int().positive(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), time: z.string().regex(/^\d{2}:\d{2}$/),
+  }).safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: "Vyberte platný dátum a čas." };
+  const d = parsed.data;
+  const local = `${d.date}T${d.time}`;
+  const start = DateTime.fromISO(local, { zone: s.tenant.timezone });
+  if (!start.isValid || start.toFormat("yyyy-MM-dd'T'HH:mm") !== local)
+    return { error: "Tento miestny čas neexistuje. Vyberte iný čas." };
+  if (start.getPossibleOffsets().length > 1)
+    return { error: "Tento čas sa pri zmene na zimný čas opakuje. Vyberte jednoznačný čas." };
+  try {
+    await withTenant(db(), s.tenant.id, (tx) => rescheduleAppointment(tx, s.tenant, {
+      appointmentId: d.id, startMs: start.toMillis(), expectedStartMs: d.expectedStart, actorId: s.user.id,
+    }));
+  } catch (e) {
+    if (e instanceof BookingError) {
+      if (e.code === "stale_appointment") return { error: "Rezervácia sa medzitým zmenila. Obnovte stránku a skúste to znova." };
+      if (e.code === "not_reschedulable") return { error: "Presunúť možno iba čakajúcu alebo potvrdenú rezerváciu." };
+      return { error: bookingErrorMessage(s.tenant.locale, e.code) };
+    }
+    throw e;
+  }
+  revalidatePath("/app/calendar");
+  revalidatePath(`/app/appointments/${d.id}`);
+  revalidatePath("/r/[token]", "page");
+  return { success: true };
 }

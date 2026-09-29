@@ -84,3 +84,18 @@ export function cancelledEmail(i: TemplateInput): { subject: string; text: strin
     text: cancelledSms(i),
   };
 }
+
+export function rescheduledSms(i: TemplateInput): string {
+  return {
+    cs: `${i.tenantName}: nový termín rezervace – ${when(i)}, ${i.services.join(", ")}. Správa: ${i.manageUrl}`,
+    sk: `${i.tenantName}: nový termín rezervácie – ${when(i)}, ${i.services.join(", ")}. Správa: ${i.manageUrl}`,
+    en: `${i.tenantName}: booking rescheduled to ${when(i)}, ${i.services.join(", ")}. Manage: ${i.manageUrl}`,
+  }[L(i.locale)];
+}
+
+export function rescheduledEmail(i: TemplateInput): { subject: string; text: string } {
+  return {
+    subject: { cs: `Změna termínu – ${i.tenantName}`, sk: `Zmena termínu – ${i.tenantName}`, en: `Booking rescheduled – ${i.tenantName}` }[L(i.locale)],
+    text: rescheduledSms(i),
+  };
+}

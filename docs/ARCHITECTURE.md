@@ -75,3 +75,12 @@ Cielený E2E test `apps/web/e2e/hold-flow.mjs` vyžaduje lokálnu, jednorazovú,
 seedovanú databázu a bežiacu aplikáciu. Overí dva prehliadače, refresh, uvoľnenie,
 expiráciu, obnovu a potvrdenie. Verejný rate limiting a overenie telefónu zostávajú
 samostatným krokom roadmapy.
+
+
+## Presun rezervácie
+
+Admin presúva budúcu čakajúcu alebo potvrdenú rezerváciu v detaile alebo potiahnutím v kalendári s potvrdením. Presun nemení personál ani zdroje. Zachová uložené položky a ceny, posunie uložené segmenty aj bloky vrátane bufferov (neprepočítava historickú rezerváciu podľa dnešného cenníka). Overí aktuálne rozvrhy, výnimky, blokácie a aktívne holdy.
+
+`rescheduleAppointment` v jednej tenantovej transakcii zamkne rezerváciu, overí pôvodný čas proti zastaranému formuláru, nahradí bloky chránené exclusion constraintom a zapíše audit. Zrušenie a zmena stavu používajú rovnaký riadkový zámok. Staré čakajúce pripomienky sa zrušia a nové dostanú jedinečné kľúče; worker odmietne úlohu so zastaraným časom. Rozbehnuté odoslanie externému poskytovateľovi nemožno vziať späť. Nový worker musí byť nasadený spolu s webom, aby spracoval `appointment.rescheduled`.
+
+Čas sa interpretuje v pásme prevádzky. Formulár odmieta neexistujúce alebo dvojznačné miestne časy pri zmene letného času. Pri touch zariadeniach a klávesnici slúži formulár v detaile. Overenie: databázové testy plus `apps/web/e2e/reschedule-flow.mjs` proti lokálnej, jednorazovej databáze bez notifikačného workera.

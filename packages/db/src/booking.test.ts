@@ -11,6 +11,7 @@ import {
   cancelAppointment,
   createAppointment,
   holdSlot,
+  rescheduleAppointment,
   setAppointmentStatus,
 } from "./booking";
 import { createTenantWithOwner, registerUser, publicTenantBySlug } from "./auth";
@@ -251,5 +252,86 @@ describe("row level security", () => {
     await expect(
       withTenant(app, otherTenant, (tx) => tx.insertInto("service_category").values({ tenant_id: tenant.id, name: "x" }).execute()),
     ).rejects.toThrow(/row-level security/);
+  });
+});
+
+
+describe("rescheduling", () => {
+  const book = (date: string) => withTenant(app, tenant.id, (tx) => createAppointment(tx, tenant, {
+    serviceIds: [seed.services.colour], startMs: t(date), nowMs: NOW, source: "admin",
+    pin: { staff: seed.resources.anna, chair: seed.resources.chair1 }, client: clientAnna,
+    notes: "Keep this note", createdBy: seed.ownerId,
+  }));
+  const snapshot = (id: string) => withTenant(app, tenant.id, async (tx) => ({
+    appointment: await tx.selectFrom("appointment").selectAll().where("id", "=", id).executeTakeFirstOrThrow(),
+    items: await tx.selectFrom("appointment_item").selectAll().where("appointment_id", "=", id).orderBy("position").execute(),
+    segments: await tx.selectFrom("appointment_segment").selectAll().where("appointment_id", "=", id).orderBy("position").execute(),
+    blocks: await tx.selectFrom("resource_block").selectAll().where("appointment_id", "=", id).orderBy("id").execute(),
+    jobs: await tx.selectFrom("job").selectAll().where("dedupe_key", "like", `%${id}%`).orderBy("id").execute(),
+  }));
+  const move = (id: string, old: number, next: number) => withTenant(app, tenant.id, (tx) => rescheduleAppointment(tx, tenant, {
+    appointmentId: id, expectedStartMs: old, startMs: next, actorId: seed.ownerId, nowMs: NOW,
+  }));
+
+  it("preserves the saved services, prices, resources and gaps; replaces reminders and frees the original slot", async () => {
+    const a = await book("2026-04-06T10:00");
+    const before = await snapshot(a.id);
+    const next = t("2026-04-07T11:00");
+    await move(a.id, a.startMs, next);
+    const after = await snapshot(a.id);
+    expect(after.items).toEqual(before.items);
+    expect(after.appointment.public_token).toBe(before.appointment.public_token);
+    expect(after.appointment.notes).toBe("Keep this note");
+    expect(Date.parse(after.appointment.start_at)).toBe(next);
+    expect(Date.parse(after.appointment.end_at) - next).toBe(a.endMs - a.startMs);
+    after.segments.forEach((seg, i) => {
+      expect(seg.resource_ids).toEqual(before.segments[i]!.resource_ids);
+      expect(seg.kind).toBe(before.segments[i]!.kind);
+      expect(Date.parse(seg.start_at) - Date.parse(before.segments[i]!.start_at)).toBe(next - a.startMs);
+    });
+    expect(after.jobs.filter((j) => j.kind === "appointment.reminder" && j.status === "pending").map((j) => Date.parse(j.run_at))).toEqual([next - 24 * 3600000]);
+    expect(after.jobs.find((j) => j.kind === "appointment.rescheduled")?.status).toBe("pending");
+    expect(after.jobs.find((j) => j.kind === "appointment.confirmation")?.status).toBe("cancelled");
+    await book("2026-04-06T10:00");
+    // Moving back and then forward generates fresh jobs even when an old job used that same time.
+    await move(a.id, next, next + 15 * 60000);
+    await move(a.id, next + 15 * 60000, next);
+    const again = await snapshot(a.id);
+    expect(again.jobs.filter((j) => j.kind === "appointment.reminder" && j.status === "pending")).toHaveLength(1);
+  });
+
+  it("rejects busy, closed and stale targets without changing the appointment, blocks or jobs", async () => {
+    const a = await book("2026-04-08T10:00");
+    await book("2026-04-09T10:00");
+    const before = await snapshot(a.id);
+    await expect(move(a.id, a.startMs, t("2026-04-09T10:00"))).rejects.toMatchObject({ code: "slot_busy" });
+    await expect(move(a.id, a.startMs, t("2026-04-12T10:00"))).rejects.toMatchObject({ code: "slot_unavailable" });
+    await expect(move(a.id, a.startMs - 60000, t("2026-04-10T10:00"))).rejects.toMatchObject({ code: "stale_appointment" });
+    expect(await snapshot(a.id)).toEqual(before);
+    await withTenant(app, tenant.id, (tx) => cancelAppointment(tx, tenant, { appointmentId: a.id, by: "user", nowMs: NOW }));
+    await expect(move(a.id, a.startMs, t("2026-04-10T10:00"))).rejects.toMatchObject({ code: "not_reschedulable" });
+  });
+
+  it("serializes two edits to the same appointment and permits only one competing move", async () => {
+    const a = await book("2026-04-13T10:00");
+    const results = await Promise.allSettled([
+      move(a.id, a.startMs, t("2026-04-14T10:00")),
+      move(a.id, a.startMs, t("2026-04-15T10:00")),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect((results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason).toMatchObject({ code: "stale_appointment" });
+    const b = await book("2026-04-16T10:00");
+    const c = await book("2026-04-17T10:00");
+    const raced = await Promise.allSettled([move(b.id, b.startMs, t("2026-04-20T10:00")), move(c.id, c.startMs, t("2026-04-20T10:00"))]);
+    expect(raced.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(["slot_busy", "conflict"]).toContain(((raced.find((r) => r.status === "rejected") as PromiseRejectedResult).reason as BookingError).code);
+  });
+
+  it("does not allow a different tenant to move the appointment", async () => {
+    const a = await book("2026-04-21T10:00");
+    const other = (await publicTenantBySlug(app, "other-salon"))!;
+    await expect(withTenant(app, other.id, (tx) => rescheduleAppointment(tx, other, {
+      appointmentId: a.id, startMs: t("2026-04-22T10:00"), expectedStartMs: a.startMs, actorId: seed.ownerId, nowMs: NOW,
+    }))).rejects.toMatchObject({ code: "not_found" });
   });
 });

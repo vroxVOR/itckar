@@ -59,6 +59,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         </div>
       ) : (
         <CalendarGrid
+          step={s.tenant.slot_step_min}
           columns={columns}
           appointments={appointments}
           timeOff={timeOff}

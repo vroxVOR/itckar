@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { DateTime } from "luxon";
+import { RescheduleForm } from "@/components/reschedule-form";
 import { notFound } from "next/navigation";
 import { requireTenant } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -22,7 +24,8 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
   if (!a) notFound();
   const l = s.tenant.locale;
   const zone = s.tenant.timezone;
-  const day = a.start_at.slice(0, 10);
+  const localStart = DateTime.fromISO(a.start_at, { zone });
+  const day = localStart.toISODate();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
@@ -66,6 +69,15 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
           <p className="mt-2 text-sm text-neutral-500">Bez klienta</p>
         )}
       </div>
+
+      {["pending", "confirmed"].includes(a.status) && Date.parse(a.start_at) > Date.now() && (
+        <details className="card">
+          <summary className="cursor-pointer font-medium">Presunúť rezerváciu</summary>
+          <div className="mt-4">
+            <RescheduleForm id={a.id} expectedStart={Date.parse(a.start_at)} date={day!} time={localStart.toFormat("HH:mm")} zone={zone} />
+          </div>
+        </details>
+      )}
 
       {a.status !== "cancelled" && (
         <div className="card flex flex-wrap gap-2">
