@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarMove } from "./calendar-move";
 import { DateTime } from "luxon";
 import type { CalendarAppointment, TimeOffBlock } from "@/lib/queries";
 import type { Resource } from "@itckar/db";
@@ -32,7 +33,9 @@ export function CalendarGrid({
   zone,
   resources,
   newHref,
+  step,
 }: {
+  step: number;
   columns: Column[];
   appointments: CalendarAppointment[];
   timeOff: TimeOffBlock[];
@@ -46,6 +49,7 @@ export function CalendarGrid({
   const colorOf = (rid: string) => resources.find((r) => r.id === rid)?.color ?? "#2f6fed";
 
   return (
+    <CalendarMove zone={zone} step={step}>
     <div className="calendar-surface overflow-x-auto rounded-xl border border-neutral-200 bg-white">
       <div className="grid min-w-[640px]" style={{ gridTemplateColumns: `56px repeat(${columns.length}, minmax(140px, 1fr))` }}>
         <div className="border-b border-neutral-200" />
@@ -73,7 +77,7 @@ export function CalendarGrid({
           const offs = timeOff.filter((b) => (!c.resourceId || b.resource_id === c.resourceId) && Date.parse(b.start) < dayEndMs && Date.parse(b.end) > dayStartMs);
           const isToday = c.day.hasSame(now, "day");
           return (
-            <div key={c.key} className="relative border-l border-neutral-200" style={{ height: totalHeight }}>
+            <div key={c.key} data-calendar-day={c.day.toISODate()} data-resource={c.resourceId ?? ""} className="relative border-l border-neutral-200" style={{ height: totalHeight }}>
               {hours.map((h) => (
                 <Link
                   key={h}
@@ -103,6 +107,10 @@ export function CalendarGrid({
                     <Link
                       key={`${a.id}-${i}`}
                       href={`/app/appointments/${a.id}`}
+                      draggable={["pending", "confirmed"].includes(a.status) && Date.parse(a.start_at) > now.toMillis()}
+                      data-move-id={["pending", "confirmed"].includes(a.status) && Date.parse(a.start_at) > now.toMillis() ? a.id : undefined}
+                      data-start={Date.parse(a.start_at)}
+                      data-offset={Math.max(Date.parse(s.start_at), c.day.set({ hour: START_HOUR }).toMillis()) - Date.parse(a.start_at)}
                       className="calendar-event absolute inset-x-1 overflow-hidden rounded-md border px-1.5 py-0.5 text-[11px] leading-tight shadow-xs hover:brightness-95"
                       style={{
                         top: p.top,
@@ -127,5 +135,6 @@ export function CalendarGrid({
         })}
       </div>
     </div>
+    </CalendarMove>
   );
 }

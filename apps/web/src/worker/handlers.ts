@@ -1,6 +1,6 @@
 import { withTenant, type Db, type Job, type Tx } from "@itckar/db";
 import type { EmailProvider, SmsProvider } from "./providers/types";
-import { cancelledEmail, cancelledSms, confirmationEmail, confirmationSms, reminderEmail, reminderSms, type TemplateInput } from "./templates";
+import { rescheduledEmail, rescheduledSms, cancelledEmail, cancelledSms, confirmationEmail, confirmationSms, reminderEmail, reminderSms, type TemplateInput } from "./templates";
 
 export interface HandlerContext {
   db: Db;
@@ -82,7 +82,7 @@ async function deliver(
 }
 
 export async function handleJob(ctx: HandlerContext, job: Job): Promise<void> {
-  const payload = job.payload as { appointmentId?: string; hoursBefore?: number; by?: string };
+  const payload = job.payload as { appointmentId?: string; hoursBefore?: number; startMs?: number; by?: string };
   if (!job.tenant_id) throw new Error(`job ${job.id} has no tenant`);
   const load = () => withTenant(ctx.db, job.tenant_id!, (tx) => loadAppointment(tx, payload.appointmentId!, ctx.appUrl));
 
@@ -93,10 +93,17 @@ export async function handleJob(ctx: HandlerContext, job: Job): Promise<void> {
       await deliver(ctx, l, "confirmation", confirmationSms(l.input), confirmationEmail(l.input));
       return;
     }
+    case "appointment.rescheduled": {
+      const l = await load();
+      if (!l || !["confirmed", "pending"].includes(l.appointment.status) || Date.parse(l.appointment.start_at) !== payload.startMs) return;
+      await deliver(ctx, l, "rescheduled", rescheduledSms(l.input), rescheduledEmail(l.input));
+      return;
+    }
     case "appointment.reminder": {
       const l = await load();
       if (!l || l.appointment.status !== "confirmed") return;
       if (Date.parse(l.appointment.start_at) < Date.now()) return; // stale
+      if (payload.startMs !== undefined && Date.parse(l.appointment.start_at) !== payload.startMs) return;
       const input = { ...l.input, hoursBefore: payload.hoursBefore ?? 24 };
       await deliver(ctx, l, `reminder_${input.hoursBefore}h`, reminderSms(input), reminderEmail(input));
       return;

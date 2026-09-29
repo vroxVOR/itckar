@@ -1,5 +1,6 @@
 import { sql } from "kysely";
 import {
+  availableIntervals,
   checkSlot,
   findSlots,
   normalize,
@@ -29,7 +30,9 @@ export type BookingErrorCode =
   | "invalid_assignment"
   | "not_found"
   | "cancel_window_passed"
-  | "hold_expired";
+  | "hold_expired"
+  | "stale_appointment"
+  | "not_reschedulable";
 
 export class BookingError extends Error {
   constructor(
@@ -594,11 +597,84 @@ async function scheduleNotifications(tx: Tx, tenant: Tenant, a: { appointmentId:
     await enqueueJob(tx, {
       tenantId: tenant.id,
       kind: "appointment.reminder",
-      payload: { appointmentId: a.appointmentId, hoursBefore: h },
+      payload: { appointmentId: a.appointmentId, hoursBefore: h, startMs: a.startMs },
       runAt: new Date(runAt),
       dedupeKey: `remind:${a.appointmentId}:${h}`,
     });
   }
+}
+
+/* ------------------------------------------------------------------ reschedule */
+
+/** Move the saved appointment snapshot, preserving prices, resources, gaps and buffers. */
+export async function rescheduleAppointment(
+  tx: Tx,
+  tenant: Tenant,
+  q: { appointmentId: string; startMs: number; expectedStartMs: number; actorId: string; nowMs?: number },
+): Promise<void> {
+  const appt = await tx.selectFrom("appointment").selectAll().where("id", "=", q.appointmentId).forUpdate().executeTakeFirst();
+  if (!appt) throw new BookingError("not_found");
+  if (!["confirmed", "pending"].includes(appt.status)) throw new BookingError("not_reschedulable");
+  const oldStart = Date.parse(appt.start_at);
+  const now = q.nowMs ?? Date.now();
+  if (oldStart !== q.expectedStartMs) throw new BookingError("stale_appointment");
+  if (!Number.isFinite(q.startMs) || q.startMs < now || oldStart < now) throw new BookingError("too_soon");
+  const delta = q.startMs - oldStart;
+  if (!delta) return;
+  const segments = await tx.selectFrom("appointment_segment").selectAll().where("appointment_id", "=", appt.id).execute();
+  const blocks = await tx.selectFrom("resource_block").selectAll().where("appointment_id", "=", appt.id).where("blocking", "=", true).execute();
+  if (!segments.length || !blocks.length) throw new BookingError("not_reschedulable");
+  const shifted = blocks.map((b) => {
+    const iv = parseTstzrange(b.during);
+    return { id: b.id, resourceId: b.resource_id, start: iv.start + delta, end: iv.end + delta };
+  });
+  const from = Math.min(...shifted.map((b) => b.start));
+  const to = Math.max(...shifted.map((b) => b.end));
+  const resources = await loadSchedulingResources(tx);
+  const busy = await loadBusy(tx, from, to);
+  for (const block of shifted) {
+    const resource = resources.find((r) => r.id === block.resourceId);
+    if (!resource || !availableIntervals(resource, from, to, tenant.timezone).some((iv) => iv.start <= block.start && iv.end >= block.end))
+      throw new BookingError("slot_unavailable");
+    if (busy.some((b) => b.ref !== appt.id && b.resourceId === block.resourceId && b.start < block.end && block.start < b.end))
+      throw new BookingError("slot_busy");
+  }
+  await purgeExpiredHolds(tx);
+  // Delete and reinsert together: shifting overlapping blocks one by one can self-conflict.
+  await tx.deleteFrom("resource_block").where("appointment_id", "=", appt.id).where("blocking", "=", true).execute();
+  try {
+    await tx.insertInto("resource_block").values(shifted.map((b) => ({
+      id: b.id, tenant_id: tenant.id, resource_id: b.resourceId, during: tstzrange(b.start, b.end),
+      kind: "appointment" as const, appointment_id: appt.id,
+    }))).execute();
+  } catch (e) { throw translatePgError(e); }
+  for (const seg of segments) {
+    await tx.updateTable("appointment_segment").set({
+      start_at: new Date(Date.parse(seg.start_at) + delta), end_at: new Date(Date.parse(seg.end_at) + delta),
+    }).where("id", "=", seg.id).execute();
+  }
+  await tx.updateTable("appointment").set({ start_at: new Date(q.startMs), end_at: new Date(Date.parse(appt.end_at) + delta) }).where("id", "=", appt.id).execute();
+  await cancelJobsByPrefix(tx, `remind:${appt.id}:`);
+  await cancelJobsByPrefix(tx, `confirm:${appt.id}`);
+  await cancelJobsByPrefix(tx, `reschedule:${appt.id}:`);
+  const revision = crypto.randomUUID();
+  await enqueueJob(tx, {
+    tenantId: tenant.id, kind: "appointment.rescheduled", payload: { appointmentId: appt.id, startMs: q.startMs },
+    dedupeKey: `reschedule:${appt.id}:${revision}`,
+  });
+  for (const h of tenant.reminder_hours) {
+    const runAt = q.startMs - h * 3_600_000;
+    if (runAt <= now + 5 * MINUTE) continue;
+    await enqueueJob(tx, {
+      tenantId: tenant.id, kind: "appointment.reminder", payload: { appointmentId: appt.id, hoursBefore: h, startMs: q.startMs },
+      runAt: new Date(runAt), dedupeKey: `remind:${appt.id}:${revision}:${h}`,
+    });
+  }
+  await tx.insertInto("audit_log").values({
+    tenant_id: tenant.id, actor_id: q.actorId, actor_type: "user", action: "appointment.reschedule",
+    entity: "appointment", entity_id: appt.id,
+    data: JSON.stringify({ previousStart: appt.start_at, start: new Date(q.startMs).toISOString() }),
+  }).execute();
 }
 
 /* ------------------------------------------------------------------ cancel / status */
@@ -612,6 +688,7 @@ export async function cancelAppointment(
     .selectFrom("appointment")
     .select(["id", "status", "start_at"])
     .where("id", "=", q.appointmentId)
+    .forUpdate()
     .executeTakeFirst();
   if (!appt) throw new BookingError("not_found");
   if (appt.status === "cancelled") return;
@@ -653,6 +730,7 @@ export async function setAppointmentStatus(
     .selectFrom("appointment")
     .select(["id", "status", "client_id"])
     .where("id", "=", q.appointmentId)
+    .forUpdate()
     .executeTakeFirst();
   if (!appt) throw new BookingError("not_found");
   await tx.updateTable("appointment").set({ status: q.status }).where("id", "=", appt.id).execute();
