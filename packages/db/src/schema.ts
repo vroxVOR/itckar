@@ -308,13 +308,25 @@ export type WaitlistEntry = Selectable<WaitlistEntryTable>;
 
 export interface PublicActionLimitTable {
   tenant_id: UUID;
-  action: "hold" | "book" | "cancel";
+  action: "hold" | "book" | "cancel" | "sms";
   key_hash: string;
   hits: number;
   expires_at: Timestamp;
 }
 
+export interface PhoneChallengeTable {
+  tenant_id: UUID;
+  token_hash: string;
+  phone_hash: string;
+  code_hash: string;
+  attempts: Generated<number>;
+  delivered: Generated<boolean>;
+  verified: Generated<boolean>;
+  expires_at: TimestampGenerated;
+}
+
 export interface DB {
+  phone_challenge: PhoneChallengeTable;
   public_action_limit: PublicActionLimitTable;
   waitlist_entry: WaitlistEntryTable;
   tenant: TenantTable;

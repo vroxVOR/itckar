@@ -3,6 +3,18 @@ export const LOCALES: Locale[] = ["cs", "sk", "en"];
 
 const messages = {
   cs: {
+    phone_remembered: "Telefon je v tomto prohlížeči ověřený. Můžete potvrdit rezervaci.",
+    phone_title: "Ověření telefonu",
+    phone_help: "Pošleme vám šestimístný kód pro bezpečné potvrzení rezervace. Nejde o souhlas s marketingem.",
+    phone_send: "Poslat SMS kód",
+    phone_code: "Kód z SMS",
+    phone_sent: "Kód platí 10 minut. Další SMS můžete vyžádat nejdříve za minutu.",
+    phone_invalid: "Zadejte platné telefonní číslo včetně předvolby.",
+    phone_incorrect: "Zkontrolujte kód a telefon. Po 5 pokusech nebo vypršení platnosti požádejte o nový kód.",
+    phone_unavailable: "SMS se nepodařilo odeslat. Zkuste to později.",
+    phone_sms: "Váš ověřovací kód itckar je {code}. Platí 10 minut. Nikomu ho nesdělujte.",
+    phone_demo: "Lokální demo — SMS nebyla odeslána, použijte kód",
+
     err_rate_limit: "Příliš mnoho pokusů. Zkuste to znovu za {seconds} sekund.",
     app_name: "itckar",
     tagline: "Rezervační systém pro salony, který nekrade klienty.",
@@ -64,6 +76,18 @@ const messages = {
     status_pending: "Čeká",
   },
   sk: {
+    phone_remembered: "Telefón je v tomto prehliadači overený. Môžete potvrdiť rezerváciu.",
+    phone_title: "Overenie telefónu",
+    phone_help: "Pošleme vám šesťmiestny kód na bezpečné potvrdenie rezervácie. Nejde o súhlas s marketingom.",
+    phone_send: "Poslať SMS kód",
+    phone_code: "Kód z SMS",
+    phone_sent: "Kód platí 10 minút. Ďalšiu SMS môžete vyžiadať najskôr o minútu.",
+    phone_invalid: "Zadajte platné telefónne číslo vrátane predvoľby.",
+    phone_incorrect: "Skontrolujte kód a telefón. Po 5 pokusoch alebo vypršaní platnosti požiadajte o nový kód.",
+    phone_unavailable: "SMS sa nepodarilo odoslať. Skúste to neskôr.",
+    phone_sms: "Váš overovací kód itckar je {code}. Platí 10 minút. Nikomu ho neposkytujte.",
+    phone_demo: "Lokálne demo — SMS nebola odoslaná, použite kód",
+
     err_rate_limit: "Príliš veľa pokusov. Skúste to znova o {seconds} sekúnd.",
     app_name: "itckar",
     tagline: "Rezervačný systém pre salóny, ktorý nekradne klientov.",
@@ -125,6 +149,18 @@ const messages = {
     status_pending: "Čaká",
   },
   en: {
+    phone_remembered: "Your phone is verified in this browser. You can confirm your booking.",
+    phone_title: "Verify your phone",
+    phone_help: "We will send a six-digit code to confirm your booking securely. This does not subscribe you to marketing.",
+    phone_send: "Send SMS code",
+    phone_code: "SMS code",
+    phone_sent: "The code expires in 10 minutes. You can request another SMS after one minute.",
+    phone_invalid: "Enter a valid phone number including the country code.",
+    phone_incorrect: "Check your code and phone number. Request a new code after 5 attempts or expiry.",
+    phone_unavailable: "We could not send the SMS. Please try again later.",
+    phone_sms: "Your itckar verification code is {code}. It expires in 10 minutes. Do not share it.",
+    phone_demo: "Local demo — no SMS was sent, use this code",
+
     err_rate_limit: "Too many attempts. Please try again in {seconds} seconds.",
     app_name: "itckar",
     tagline: "Booking software for salons that never steals your clients.",

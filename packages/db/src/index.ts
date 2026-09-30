@@ -8,3 +8,4 @@ export * from "./auth";
 export * from "./seed";
 export * from "./waitlist";
 export * from "./public-action-limit";
+export * from "./phone-verification";

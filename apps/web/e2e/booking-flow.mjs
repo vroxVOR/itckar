@@ -86,6 +86,11 @@ try {
   await pub.fill("#email", "jana@example.com");
   await pub.check("input[name=consentSms]");
   await pub.screenshot({ path: `${SP}/shots/05-public-step4.png`, fullPage: true });
+  // Local server must explicitly use PHONE_VERIFICATION_MODE=demo.
+  await pub.getByRole("button", { name: "Poslať SMS kód" }).click();
+  await pub.getByTestId("demo-phone-code").waitFor();
+  const smsCode = (await pub.getByTestId("demo-phone-code").textContent()).match(/\d{6}/)[0];
+  await pub.locator("#phoneCode").fill(smsCode);
   await pub.click("button:has-text('Potvrdiť rezerváciu')");
   await pub.waitForURL(/\/done\//, { timeout: 15000 });
   const done = await pub.textContent("h1");

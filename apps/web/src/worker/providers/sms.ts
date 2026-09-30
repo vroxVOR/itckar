@@ -15,6 +15,7 @@ function bulkgateSms(appId: string, token: string): SmsProvider {
     async send(m) {
       const r = await fetch("https://portal.bulkgate.com/api/1.0/simple/transactional", {
         method: "POST",
+        signal: AbortSignal.timeout(10000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           application_id: appId,
@@ -41,6 +42,7 @@ function twilioSms(sid: string, token: string, from: string): SmsProvider {
       const body = new URLSearchParams({ To: m.to, From: from, Body: m.text });
       const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
         method: "POST",
+        signal: AbortSignal.timeout(10000),
         headers: { Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`, "Content-Type": "application/x-www-form-urlencoded" },
         body,
       });

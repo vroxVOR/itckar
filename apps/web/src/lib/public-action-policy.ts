@@ -6,6 +6,7 @@ export const PUBLIC_ACTION_LIMITS: Record<
   PublicAction,
   { client: number; tenant: number; seconds: number }
 > = {
+  sms: { client: 5, tenant: 60, seconds: 900 },
   hold: { client: 12, tenant: 300, seconds: 300 },
   book: { client: 8, tenant: 120, seconds: 600 },
   cancel: { client: 20, tenant: 120, seconds: 600 },
