@@ -1,6 +1,6 @@
 import { sql, type Tx } from "./db";
 
-export type PublicAction = "hold" | "book" | "cancel";
+export type PublicAction = "hold" | "book" | "cancel" | "sms";
 export type LimitResult = { allowed: boolean; retryAfterSeconds: number };
 
 /** Atomic across app replicas. Call in a separate committed transaction before business writes. */

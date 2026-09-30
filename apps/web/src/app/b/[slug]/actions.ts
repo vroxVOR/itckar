@@ -1,12 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { z } from "zod";
-import { BookingError, completeWaitlistEntry, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
+import { consumePhoneChallenge, verifyPhoneChallenge, BookingError, completeWaitlistEntry, createAppointment, holdSlot, releaseHold, publicTenantBySlug, withTenant } from "@itckar/db";
 import { checkPublicActionLimit, publicLimitMessage } from "@/lib/public-action-limit";
 import { db } from "@/lib/db";
 import { matchesHold, readHold, signHold, type HoldSelection } from "@/lib/booking-hold";
+import { bookingPhone, phoneHash, hasRememberedPhone, rememberedPhone } from "@/lib/phone-verification";
+import { t } from "@/lib/i18n";
 import { bookingErrorMessage } from "@/lib/i18n";
 
 const selectionSchema = z.object({
@@ -17,6 +19,8 @@ const selectionSchema = z.object({
 });
 
 const schema = z.object({
+  phoneToken: z.string().regex(/^(?:[a-f0-9]{48})?$/),
+  phoneCode: z.string().regex(/^(?:[0-9]{6})?$/),
   waitlistToken: z.string().regex(/^(?:[a-f0-9]{48})?$/),
   holdTicket: z.string().max(32_768),
   slug: z.string().min(1).max(100),
@@ -38,6 +42,8 @@ export type BookState = { error?: string; holdExpired?: boolean; retryAfterSecon
 
 export async function bookAction(_prev: BookState, form: FormData): Promise<BookState> {
   const parsed = schema.safeParse({
+    phoneToken: form.get("phoneToken") ?? "",
+    phoneCode: form.get("phoneCode") ?? "",
     waitlistToken: form.get("waitlistToken") ?? "",
     holdTicket: form.get("holdTicket") ?? "",
     slug: form.get("slug"),
@@ -64,11 +70,21 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
   if (!hold || !matchesHold(hold, tenant.id, { ...d, staffId: d.staffId ?? "" })) {
     return { error: bookingErrorMessage(tenant.locale, "hold_expired"), holdExpired: true };
   }
+  const phone = bookingPhone(d.phone, tenant.country);
+  if (!phone) return { error: t(tenant.locale, "phone_invalid") };
+  const tokenHash = phoneHash(tenant.id, "token", d.phoneToken);
+  const phoneKey = phoneHash(tenant.id, "phone", phone);
+  const remembered = hasRememberedPhone(tenant.id, phoneKey, (await cookies()).get(`phone_${tenant.id}`)?.value);
+  const verified = remembered || d.phoneToken && d.phoneCode && await withTenant(db(), tenant.id, tx => verifyPhoneChallenge(tx, {
+    tokenHash, phoneHash: phoneKey, codeHash: phoneHash(tenant.id, "code", `${d.phoneToken}:${d.phoneCode}`),
+  }));
+  if (!verified) return { error: t(tenant.locale, "phone_incorrect") };
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   let token: string;
   try {
     const created = await withTenant(db(), tenant.id, async (tx) => {
+      if (!remembered && !await consumePhoneChallenge(tx, tokenHash, phoneKey)) throw new Error("phone_proof_expired");
       const appointment = await createAppointment(tx, tenant, {
         holdToken: hold.holdToken,
         assignments: hold.assignments,
@@ -78,7 +94,7 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
         client: {
           firstName: d.firstName,
           ...(d.lastName ? { lastName: d.lastName } : {}),
-          phone: d.phone,
+          phone,
           ...(d.email ? { email: d.email } : {}),
           ...(d.note ? { note: d.note } : {}),
           locale: d.locale || tenant.locale,
@@ -93,9 +109,14 @@ export async function bookAction(_prev: BookState, form: FormData): Promise<Book
     });
     token = created.publicToken;
   } catch (e) {
+    if (e instanceof Error && e.message === "phone_proof_expired") return { error: t(tenant.locale, "phone_incorrect") };
     if (e instanceof BookingError) return { error: bookingErrorMessage(tenant.locale, e.code), holdExpired: e.code === "hold_expired" };
     throw e;
   }
+  (await cookies()).set(`phone_${tenant.id}`, rememberedPhone(tenant.id, phoneKey), {
+    httpOnly: true, secure: new URL(process.env.APP_URL ?? "http://localhost").protocol === "https:",
+    sameSite: "lax", path: `/b/${d.slug}`, maxAge: 30 * 86400,
+  });
   redirect(`/b/${d.slug}/done/${token}`);
 }
 

@@ -188,6 +188,11 @@ try {
   await customer.locator("#firstName").fill(fixtures.client.first_name);
   await customer.locator("#phone").fill(fixtures.client.phone!);
   await customer.locator("#email").fill(fixtures.client.email!);
+  // Local server must explicitly use PHONE_VERIFICATION_MODE=demo.
+  await customer.getByRole("button", { name: "Poslať SMS kód" }).click();
+  await customer.getByTestId("demo-phone-code").waitFor();
+  const smsCode = (await customer.getByTestId("demo-phone-code").textContent())!.match(/\d{6}/)![0]!;
+  await customer.locator("#phoneCode").fill(smsCode);
   await customer.getByRole("button", { name: "Potvrdiť rezerváciu" }).click();
   await customer.waitForURL(/\/done\//);
   const booked = await run((tx) =>

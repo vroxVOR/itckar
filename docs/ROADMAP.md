@@ -14,6 +14,6 @@
 1. ✅ Presun rezervácie potiahnutím v kalendári a formulárom v detaile. Zachová personál, služby a cenu; preverí dostupnosť, preplánuje pripomienky a oznámi nový čas. Zmena personálu ostáva samostatným budúcim rozšírením.
 2. ✅ Čakatelia: pridanie prevádzkou na žiadosť klienta, služby/personál/obdobie, overenie uvoľneného termínu, e-mail alebo SMS, odkaz na rezerváciu a ukončenie čakania. Verejné samoobslužné prihlásenie a časové preferencie v rámci dňa sú ďalšie rozšírenia.
 3. ✅ Päťminútové podržanie termínu počas vypĺňania formulára: odpočet, opätovné overenie po vypršaní, uvoľnenie cez Späť a podpísané naviazanie na výber.
-4. ✅ Databázové limity nových holdov, potvrdení rezervácie a verejného rušenia; tenantový strop + klientsky limit pri dôveryhodnej proxy. ⏳ Overenie telefónu SMS kódom pri prvej rezervácii.
+4. ✅ Databázové limity nových holdov, potvrdení rezervácie a verejného rušenia; tenantový strop + klientsky limit pri dôveryhodnej proxy. ✅ Overenie telefónu SMS kódom pri prvej rezervácii v prehliadači; podpísané HttpOnly zapamätanie na 30 dní, nové overenie pri zmene čísla alebo prehliadača.
 5. Vlastná doména / white-label branding v platenom pláne.
 6. Overenie cenníkov konkurencie a §116 novely na citovaných URL (viď report, „Metodologické obmedzenia“).

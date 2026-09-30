@@ -140,6 +140,12 @@ try {
   await exhaust("book");
   await page.locator("#firstName").fill("Limit Test");
   await page.locator("#phone").fill("+421900123888");
+  // Local server must explicitly use PHONE_VERIFICATION_MODE=demo.
+  await page.getByRole("button", { name: "Poslať SMS kód" }).click();
+  await page.getByTestId("demo-phone-code").waitFor();
+  const smsCode = (await page.getByTestId("demo-phone-code").textContent())!.match(/\d{6}/)![0]!;
+  await page.locator("#phoneCode").fill(smsCode);
+
   await page.getByRole("button", { name: "Potvrdiť rezerváciu" }).click();
   await page.getByText(/Príliš veľa pokusov/).waitFor();
   assert.equal(

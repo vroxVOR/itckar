@@ -54,6 +54,11 @@ try {
   const renewed = await waitForHold(second, held);
   assert.equal(await second.locator("#firstName").inputValue(), "Hold Test", "renewal preserves entered details");
   // Server-time offset allows this even though the browser clock is now five minutes ahead.
+  // Local server must explicitly use PHONE_VERIFICATION_MODE=demo.
+  await second.getByRole("button", { name: "Poslať SMS kód" }).click();
+  await second.getByTestId("demo-phone-code").waitFor();
+  const smsCode = (await second.getByTestId("demo-phone-code").textContent()).match(/\d{6}/)[0];
+  await second.locator("#phoneCode").fill(smsCode);
   await second.getByRole("button", { name: "Potvrdiť rezerváciu" }).click();
   await second.waitForURL(/\/done\//);
   const renewedPayload = JSON.parse(Buffer.from(renewed.split(".")[0], "base64url").toString());

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, type ChangeEvent } from "react";
+import { useActionState, useState, useTransition, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useBookingHold } from "./use-booking-hold";
 import { t } from "@/lib/i18n";
+import { sendPhoneCodeAction, type PhoneState } from "./phone-actions";
 import { bookAction } from "./actions";
 
 interface Props {
@@ -22,6 +23,10 @@ interface Props {
 export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, startMs, locale, when, backHref, labels }: Props) {
   const [state, action, pending] = useActionState(bookAction, undefined);
   const router = useRouter();
+  const [phoneState, setPhoneState] = useState<PhoneState>({});
+  const [sentPhone, setSentPhone] = useState("");
+  const [phoneCode, setPhoneCode] = useState("");
+  const [sendingCode, startSendingCode] = useTransition();
   // Server-action denials must not erase contact details or consent choices.
   const [details, setDetails] = useState({ firstName: "", lastName: "", phone: "", email: "", note: "" });
   const [consents, setConsents] = useState({ sms: false, email: false });
@@ -41,6 +46,7 @@ export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, sta
       if (!ready || pending || leaving) e.preventDefault();
       else setSubmittedTicket(ticket);
     }}>
+      <input type="hidden" name="phoneToken" value={sentPhone === details.phone ? phoneState.token ?? "" : ""} />
       <input type="hidden" name="waitlistToken" value={waitlistToken} />
       <input type="hidden" name="holdTicket" value={ticket} />
       <div className={`hold-notice ${expired || (hold && "error" in hold) ? "hold-notice-warning" : ""}`}>
@@ -62,6 +68,23 @@ export function BookingForm({ waitlistToken = "", slug, serviceIds, staffId, sta
         <div><label className="label" htmlFor="phone">{labels.phone} *</label><input className="input" id="phone" name="phone" {...field("phone")} type="tel" autoComplete="tel" placeholder="+421 900 000 000" required /></div>
         <div><label className="label" htmlFor="email">{labels.email}</label><input className="input" id="email" name="email" {...field("email")} type="email" autoComplete="email" /></div>
       </div>
+      <section className="rounded-xl border border-brand-100 bg-brand-50/50 p-4 space-y-3" aria-label={t(locale, "phone_title")}>
+        <div><h3 className="font-medium">{t(locale, "phone_title")}</h3><p className="mt-1 text-sm text-neutral-600">{t(locale, "phone_help")}</p></div>
+        <button type="button" className="btn-secondary" disabled={!ready || pending || sendingCode || !details.phone || leaving} onClick={() => {
+          const phone = details.phone;
+          startSendingCode(async () => {
+            try {
+              const result = await sendPhoneCodeAction(slug, phone, ticket);
+              if (result.token || result.remembered) { setSentPhone(phone); setPhoneCode(""); setPhoneState(result); }
+              else setPhoneState(previous => ({ ...previous, error: result.error ?? t(locale, "phone_unavailable") }));
+            } catch { setPhoneState(previous => ({ ...previous, error: t(locale, "phone_unavailable") })); }
+          });
+        }}>{sendingCode ? "…" : t(locale, "phone_send")}</button>
+        {phoneState.message && sentPhone === details.phone && <p role="status" className="text-sm">{phoneState.message}</p>}
+        {phoneState.demoCode && sentPhone === details.phone && <p className="text-sm font-medium" data-testid="demo-phone-code">{t(locale, "phone_demo")}: {phoneState.demoCode}</p>}
+        {phoneState.error && <p role="alert" className="text-sm text-red-700">{phoneState.error}</p>}
+        {!(phoneState.remembered && sentPhone === details.phone) && <div><label className="label" htmlFor="phoneCode">{t(locale, "phone_code")}</label><input className="input max-w-48 tracking-widest" id="phoneCode" name="phoneCode" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={phoneCode} onChange={e => setPhoneCode(e.target.value.replace(/[^0-9]/g, ""))} /></div>}
+      </section>
       <div><label className="label" htmlFor="note">{labels.note}</label><textarea className="input" id="note" name="note" {...field("note")} rows={2} /></div>
       <div className="space-y-1 text-sm">
         <label className="flex items-center gap-2"><input type="checkbox" name="consentSms" checked={consents.sms} onChange={(e) => setConsents((c) => ({ ...c, sms: e.target.checked }))} /> {labels.consentSms}</label>
