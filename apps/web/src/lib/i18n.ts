@@ -3,6 +3,7 @@ export const LOCALES: Locale[] = ["cs", "sk", "en"];
 
 const messages = {
   cs: {
+    err_rate_limit: "Příliš mnoho pokusů. Zkuste to znovu za {seconds} sekund.",
     app_name: "itckar",
     tagline: "Rezervační systém pro salony, který nekrade klienty.",
     login: "Přihlásit se",
@@ -63,6 +64,7 @@ const messages = {
     status_pending: "Čeká",
   },
   sk: {
+    err_rate_limit: "Príliš veľa pokusov. Skúste to znova o {seconds} sekúnd.",
     app_name: "itckar",
     tagline: "Rezervačný systém pre salóny, ktorý nekradne klientov.",
     login: "Prihlásiť sa",
@@ -123,6 +125,7 @@ const messages = {
     status_pending: "Čaká",
   },
   en: {
+    err_rate_limit: "Too many attempts. Please try again in {seconds} seconds.",
     app_name: "itckar",
     tagline: "Booking software for salons that never steals your clients.",
     login: "Log in",

@@ -306,7 +306,16 @@ export interface WaitlistEntryTable {
 }
 export type WaitlistEntry = Selectable<WaitlistEntryTable>;
 
+export interface PublicActionLimitTable {
+  tenant_id: UUID;
+  action: "hold" | "book" | "cancel";
+  key_hash: string;
+  hits: number;
+  expires_at: Timestamp;
+}
+
 export interface DB {
+  public_action_limit: PublicActionLimitTable;
   waitlist_entry: WaitlistEntryTable;
   tenant: TenantTable;
   user_account: UserAccountTable;
